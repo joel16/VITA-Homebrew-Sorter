@@ -4,6 +4,7 @@
 #include <vitaGL.h>
 
 #include "applist.h"
+#include "imgui_internal.h"
 
 namespace Renderer {
     static void Start(void) {
@@ -75,9 +76,19 @@ namespace GUI {
                 
                 ImGui::SameLine();
                 
+                if (sort == SortDefault) {
+                    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+                    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+                }
+
                 if (ImGui::Button("Apply Sort")) {
                     AppList::Backup();
                     AppList::Save(entries);
+                }
+
+                if (sort == SortDefault) {
+                    ImGui::PopItemFlag();
+                    ImGui::PopStyleVar();
                 }
                 
                 ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
