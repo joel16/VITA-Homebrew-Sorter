@@ -3,7 +3,10 @@
 #include <string>
 
 #include "applist.h"
+#include "fs.h"
+#include "log.h"
 #include "sqlite3.h"
+#include "utils.h"
 
 namespace AppList {
     constexpr char path[] = "ur0:/shell/db/app.db";
@@ -101,7 +104,7 @@ namespace AppList {
             ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
 
             if (ret != SQLITE_OK) {
-                printf("sqlite3_exec error: %s\n", error);
+                Log::Error("sqlite3_exec error: %s\n", error);
                 sqlite3_free(error);
                 sqlite3_close(db);
                 return ret;
@@ -122,7 +125,7 @@ namespace AppList {
             ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
 
             if (ret != SQLITE_OK) {
-                printf("sqlite3_exec error: %s\n", error);
+                Log::Error("sqlite3_exec error: %s\n", error);
                 sqlite3_free(error);
                 sqlite3_close(db);
                 return ret;
@@ -183,5 +186,19 @@ namespace AppList {
                 pos++;
             }
         }
+    }
+
+    int Backup(void) {
+        unsigned char *data = nullptr;
+        SceOff size = 0;
+
+        int ret = 0;
+        if (R_FAILED(ret = FS::ReadFile(path, &data, &size)))
+            return ret;
+
+        if (R_FAILED(ret = FS::WriteFile("ux0:/data/VITAHomebrewSorter/app.db", data, size)))
+            return ret; 
+        
+        return 0;
     }
 }

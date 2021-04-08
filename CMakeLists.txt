@@ -42,7 +42,9 @@ add_executable(${PROJECT_NAME}
   libs/imgui/imgui_widgets.cpp
   libs/libsqlite/libsqlite/sqlite.c
   source/applist.cpp
+  source/fs.cpp
   source/gui.cpp
+  source/log.cpp
   source/main.cpp
   source/utils.cpp
 )

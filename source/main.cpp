@@ -3,6 +3,7 @@
 #include <vitaGL.h>
 
 #include "gui.h"
+#include "log.h"
 #include "utils.h"
 
 extern "C" {
@@ -88,10 +89,13 @@ namespace Services {
 		
 		sceSysmoduleLoadModule(SCE_SYSMODULE_SQLITE);
 		sqlite3_rw_init();
+		
+		Log::Init();
 	}
 
 	void Exit(void) {
 		// Clean up
+		Log::Exit();
 		sqlite3_rw_exit();
 		sceSysmoduleUnloadModule(SCE_SYSMODULE_SQLITE);
 		Utils::EndAppUtil();

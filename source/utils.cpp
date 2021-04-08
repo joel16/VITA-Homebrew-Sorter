@@ -4,6 +4,7 @@
 #include <psp2/system_param.h>
 #include <cstdio>
 
+#include "log.h"
 #include "utils.h"
 
 int SCE_CTRL_ENTER, SCE_CTRL_CANCEL;
@@ -20,7 +21,7 @@ namespace Utils {
         int ret = 0;
         
         if (R_FAILED(ret = sceAppUtilInit(&init, &boot))) {
-            printf("sceAppUtilInit failed: 0x%lx\n", ret);
+            Log::Error("sceAppUtilInit failed: 0x%lx\n", ret);
             return ret;
         }
         
@@ -28,17 +29,17 @@ namespace Utils {
         sceCommonDialogConfigParamInit(&param);
 
         if (R_FAILED(ret = sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_LANG, reinterpret_cast<int *>(&param.language)))) {
-            printf("sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_LANG) failed: 0x%lx\n", ret);
+            Log::Error("sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_LANG) failed: 0x%lx\n", ret);
             return ret;
         }
 
         if (R_FAILED(ret = sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_ENTER_BUTTON, reinterpret_cast<int *>(&param.enterButtonAssign)))) {
-            printf("sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_ENTER_BUTTON) failed: 0x%lx\n", ret);
+            Log::Error("sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_ENTER_BUTTON) failed: 0x%lx\n", ret);
             return ret;
         }
 
         if (R_FAILED(ret = sceCommonDialogSetConfigParam(&param))) {
-            printf("sceCommonDialogSetConfigParam failed: 0x%lx\n", ret);
+            Log::Error("sceCommonDialogSetConfigParam failed: 0x%lx\n", ret);
             return ret;
         }
         
@@ -49,7 +50,7 @@ namespace Utils {
         int ret = 0;
         
         if (R_FAILED(ret = sceAppUtilShutdown())) {
-            printf("sceAppUtilShutdown failed: 0x%lx\n", ret);
+            Log::Error("sceAppUtilShutdown failed: 0x%lx\n", ret);
             return ret;
         }
         
@@ -59,7 +60,7 @@ namespace Utils {
     int GetEnterButton(void) {
         int button = 0, ret = 0;
         if (R_FAILED(ret = sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_ENTER_BUTTON, &button))) {
-            printf("sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_ENTER_BUTTON) failed: 0x%lx\n", ret);
+            Log::Error("sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_ENTER_BUTTON) failed: 0x%lx\n", ret);
             return ret;
         }
         
@@ -74,7 +75,7 @@ namespace Utils {
     int GetCancelButton(void) {
         int button = 0, ret = 0;
         if (R_FAILED(ret = sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_ENTER_BUTTON, &button))) {
-            printf("sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_ENTER_BUTTON) failed: 0x%lx\n", ret);
+            Log::Error("sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_ENTER_BUTTON) failed: 0x%lx\n", ret);
             return ret;
         }
         

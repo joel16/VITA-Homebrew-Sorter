@@ -29,6 +29,7 @@ namespace AppList {
     bool SortAlphabeticalAsc(const AppInfoIcon &entryA, const AppInfoIcon &entryB);
     bool SortAlphabeticalDesc(const AppInfoIcon &entryA, const AppInfoIcon &entryB);
     void Sort(std::vector<AppInfoIcon> &entries, std::vector<AppInfoPage> &pages, std::vector<AppInfoFolder> &folders);
+    int Backup(void);
 }
 
 #endif

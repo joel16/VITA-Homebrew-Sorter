@@ -75,8 +75,10 @@ namespace GUI {
                 
                 ImGui::SameLine();
                 
-                if (ImGui::Button("Apply Sort"))
+                if (ImGui::Button("Apply Sort")) {
+                    AppList::Backup();
                     AppList::Save(entries);
+                }
                 
                 ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
 
