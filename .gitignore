@@ -23,10 +23,22 @@
 # Compiled Static libraries
 *.lai
 *.la
-*.a
 *.lib
 
 # Executables
 *.exe
 *.out
 *.app
+*.self
+*.velf
+
+# Cmake
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+
+# Other binaries
+VITA-Homebrew-Sorter
+*.vpk
+*.sfo
