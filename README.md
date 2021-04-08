@@ -1,13 +1,15 @@
 # VITA-Homebrew-Sorter
 
-A basic PS VITA homebrew that sorts the application database in SceShell alphabetically. The application also sorts apps/games inside folders as well. A backup will be made before any changes are applied to the application database. You can find the backup in ux0:/data/VITAHomebrewSorter/app.db.
+A basic PS VITA homebrew that sorts the application database in SceShell alphabetically. The application also sorts apps/games inside folders as well. A backup will be made before any changes are applied to the application database. You can find the backup in `ux0:/data/VITAHomebrewSorter/app.db`.
 
 # Disclaimer
-I am not responsible for anything that happens to your device after the use of this software. I always make sure to test my software(s) thoroughly before release. If you do encounter any problems please submit an issue with a copy of your app.db (ur0:/shell/db/app.db).
+I am not responsible for anything that happens to your device after the use of this software. I always make sure to test my software(s) thoroughly before release. If you do encounter any problems please submit an issue with a copy of your app.db (`ur0:/shell/db/app.db`).
 
 # Features:
 - Sort app list alphabetically (ascending)
 - Sort app list alphabetically (descending)
+- Display app list after sorting is applied using ImGui's tables API.
+- Backup application database before sorting is applied.
 
 # Credits:
 - Rinnegatamante for [vitaGL](https://github.com/Rinnegatamante/vitaGL)
