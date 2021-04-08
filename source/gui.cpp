@@ -4,7 +4,9 @@
 #include <vitaGL.h>
 
 #include "applist.h"
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui_internal.h"
+#include "textures.h"
 
 namespace Renderer {
     static void Start(void) {
@@ -22,13 +24,50 @@ namespace Renderer {
 }
 
 namespace GUI {
-    int Confirmpopup(std::vector<AppInfoIcon> &entries) {
+    static int Confirmpopup(std::vector<AppInfoIcon> &entries) {
         return 0;
+    }
+
+    static void SetupWindow(void) {
+        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(960.0f, 544.0f), ImGuiCond_Once);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    };
+    
+    static void ExitWindow(void) {
+        ImGui::End();
+        ImGui::PopStyleVar();
+    };
+
+    void RenderSplash(void) {
+        bool done = false;
+        SceRtcTick start, now;
+
+        sceRtcGetCurrentTick(&start);
+
+        while(!done) {
+            sceRtcGetCurrentTick(&now);
+
+            Renderer::Start();
+            GUI::SetupWindow();
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+            if (ImGui::Begin("splash", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar)) {
+                ImGui::SetCursorPos((ImGui::GetContentRegionAvail() - ImVec2((splash.width), (splash.height))) * 0.5f);
+                ImGui::Image(reinterpret_cast<ImTextureID>(splash.id), ImVec2(splash.width, splash.height));
+            }
+            
+            GUI::ExitWindow();
+            ImGui::PopStyleVar();
+            Renderer::End(ImVec4(0.05f, 0.07f, 0.13f, 1.00f));
+
+            if ((now.tick - start.tick) >= 5000000)
+                done = true;
+        }
     }
 
     int RenderLoop(void) {
         bool done = false;
-        ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
         std::vector<AppInfoIcon> entries;
         std::vector<AppInfoPage> pages;
@@ -47,10 +86,7 @@ namespace GUI {
         
         while (!done) {
             Renderer::Start();
-
-            ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Once);
-            ImGui::SetNextWindowSize(ImVec2(960.0f, 544.0f), ImGuiCond_Once);
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+            GUI::SetupWindow();
 
             if (ImGui::Begin("VITA Homebrew Sorter", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
                 if (ImGui::RadioButton("Default", sort == SortDefault)) {
@@ -122,11 +158,9 @@ namespace GUI {
                     ImGui::EndTable();
                 }
             }
-            
-            ImGui::End();
-            ImGui::PopStyleVar();
 
-            Renderer::End(clear_color);
+            GUI::ExitWindow();
+            Renderer::End(ImVec4(0.45f, 0.55f, 0.60f, 1.00f));
         }
 
         return 0;
