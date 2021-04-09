@@ -24,9 +24,22 @@ namespace Renderer {
 }
 
 namespace GUI {
-    static int Confirmpopup(std::vector<AppInfoIcon> &entries) {
-        return 0;
-    }
+    enum State {
+        StateNone,
+        StateConfirm,
+        StateDone
+    };
+
+    static void SetupPopup(const char *id) {
+        ImGui::OpenPopup(id);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
+        ImGui::SetNextWindowPos(ImVec2(480.0f, 272.0f), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    };
+    
+    static void ExitPopup(void) {
+        ImGui::EndPopup();
+        ImGui::PopStyleVar();
+    };
 
     static void SetupWindow(void) {
         ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Once);
@@ -66,6 +79,62 @@ namespace GUI {
         }
     }
 
+    static void ConfirmPopup(State *state, std::vector<AppInfoIcon> &entries) {
+        ImGui::OpenPopup("Confirmation");
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20, 20));
+        ImGui::SetNextWindowPos(ImVec2(480.0f, 272.0f), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        
+        if (ImGui::BeginPopupModal("Confirmation", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Are you sure you want to apply this sorting method?");
+            ImGui::Dummy(ImVec2(0.0f, 5.0f));
+            ImGui::Text("A restart is required to view the changes.");
+            ImGui::Dummy(ImVec2(0.0f, 5.0f));
+
+            if (ImGui::Button("Ok", ImVec2(120, 0))) {
+                AppList::Backup();
+                AppList::Save(entries);
+                ImGui::CloseCurrentPopup();
+                *state = StateDone;
+            }
+
+            ImGui::SameLine(0.0f, 15.0f);
+
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                ImGui::CloseCurrentPopup();
+                *state = StateNone;
+            }
+
+            ImGui::EndPopup();
+        }
+
+        ImGui::PopStyleVar();
+    }
+
+    static void RestartPopup(State *state) {
+        ImGui::OpenPopup("Restart");
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20, 20));
+        ImGui::SetNextWindowPos(ImVec2(480.0f, 272.0f), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        
+        if (ImGui::BeginPopupModal("Restart", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Do you wish to restart your device?");
+            ImGui::Dummy(ImVec2(0.0f, 5.0f));
+
+            if (ImGui::Button("Ok", ImVec2(120, 0)))
+                scePowerRequestColdReset();
+
+            ImGui::SameLine(0.0f, 15.0f);
+
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                ImGui::CloseCurrentPopup();
+                *state = StateNone;
+            }
+
+            ImGui::EndPopup();
+        }
+
+        ImGui::PopStyleVar();
+    }
+
     int RenderLoop(void) {
         bool done = false;
 
@@ -85,7 +154,9 @@ namespace GUI {
             Folder,
         };
         
-        static int sort = 0;
+        static SortMode sort = SortDefault;
+        static State state = StateNone;
+
         ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter |
             ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY;
         
@@ -122,10 +193,8 @@ namespace GUI {
                     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
                 }
 
-                if (ImGui::Button("Apply Sort")) {
-                    AppList::Backup();
-                    AppList::Save(entries);
-                }
+                if (ImGui::Button("Apply Sort"))
+                    state = StateConfirm;
 
                 if (sort == SortDefault) {
                     ImGui::PopItemFlag();
@@ -135,7 +204,7 @@ namespace GUI {
                 ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
 
                 if (ImGui::BeginTable("AppEntries", 5, tableFlags)) {
-                    ImGui::TableSetupColumn(" ");
+                    ImGui::TableSetupColumn("");
                     ImGui::TableSetupColumn("Title");
                     ImGui::TableSetupColumn("Page ID");
                     ImGui::TableSetupColumn("Page Number");
@@ -169,6 +238,21 @@ namespace GUI {
             }
 
             GUI::ExitWindow();
+
+            switch(state) {
+                case StateNone:
+                    break;
+
+                case StateConfirm:
+                    GUI::ConfirmPopup(&state, entries);
+                    break;
+
+                case StateDone:
+                    GUI::RestartPopup(&state);
+                    break;
+
+            }
+
             Renderer::End(ImVec4(0.45f, 0.55f, 0.60f, 1.00f));
         }
 

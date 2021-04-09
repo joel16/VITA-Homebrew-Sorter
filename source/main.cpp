@@ -13,7 +13,6 @@ extern "C" {
 }
 
 int _newlib_heap_size_user = 192 * 1024 * 1024;
-//204, 59, 69
 
 namespace Services {
 	void SetDefaultTheme(void) {

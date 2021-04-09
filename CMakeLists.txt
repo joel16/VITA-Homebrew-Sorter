@@ -65,6 +65,7 @@ target_link_libraries(${PROJECT_NAME}
   SceDisplay_stub
   SceGxm_stub
   SceLibKernel_stub
+  ScePower_stub
   SceShaccCg_stub
   SceSqlite_stub
   SceSysmodule_stub
