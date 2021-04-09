@@ -93,4 +93,15 @@ namespace FS {
 
         return bytes_written;
     }
+
+    int RemoveFile(const std::string &path) {
+        int ret = 0;
+        
+        if (R_FAILED(ret = sceIoRemove(path.c_str()))) {
+            Log::Error("sceIoRemove(%s) failed: 0x%lx\n", path.c_str(), ret);
+            return ret;
+        }
+            
+        return 0;
+    }
 }

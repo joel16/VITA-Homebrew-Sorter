@@ -10,6 +10,7 @@ namespace FS {
     int CreateFile(const std::string &path);
     int ReadFile(const std::string &path, unsigned char **buffer, SceOff *size);
     int WriteFile(const std::string &path, const void *data, SceSize size);
+    int RemoveFile(const std::string &path);
 }
 
 #endif

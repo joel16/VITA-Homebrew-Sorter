@@ -14,6 +14,8 @@ namespace Log {
             sceIoMkdir("ux0:data", 0777);
         if (!FS::DirExists("ux0:data/VITAHomebrewSorter"))
             sceIoMkdir("ux0:data/VITAHomebrewSorter", 0777);
+        if (!FS::DirExists("ux0:data/VITAHomebrewSorter/backup"))
+            sceIoMkdir("ux0:data/VITAHomebrewSorter/backup", 0777);
 
         if (!FS::FileExists("ux0:data/VITAHomebrewSorter/debug.log"))
             FS::CreateFile("ux0:data/VITAHomebrewSorter/debug.log");

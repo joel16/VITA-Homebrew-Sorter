@@ -4,6 +4,7 @@
 #include <vitaGL.h>
 
 #include "applist.h"
+#include "fs.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui_internal.h"
 #include "textures.h"
@@ -27,8 +28,11 @@ namespace GUI {
     enum State {
         StateNone,
         StateConfirm,
+        StateRestore,
         StateDone
     };
+
+    static bool backupExists = false;
 
     static void SetupPopup(const char *id) {
         ImGui::OpenPopup(id);
@@ -52,6 +56,20 @@ namespace GUI {
         ImGui::PopStyleVar();
     };
 
+    static void DisableButtonInit(bool disable) {
+        if (disable) {
+            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+        }
+    }
+
+    static void DisableButtonExit(bool disable) {
+        if (disable) {
+            ImGui::PopItemFlag();
+            ImGui::PopStyleVar();
+        }
+    }
+
     void RenderSplash(void) {
         bool done = false;
         SceRtcTick start, now;
@@ -74,25 +92,34 @@ namespace GUI {
             ImGui::PopStyleVar();
             Renderer::End(ImVec4(0.05f, 0.07f, 0.13f, 1.00f));
 
-            if ((now.tick - start.tick) >= 5000000)
+            if ((now.tick - start.tick) >= 3000000)
                 done = true;
         }
     }
 
-    static void ConfirmPopup(State *state, std::vector<AppInfoIcon> &entries) {
-        ImGui::OpenPopup("Confirmation");
+    static void ConfirmRestorePopup(State *state, std::vector<AppInfoIcon> &entries) {
+        ImGui::OpenPopup(*state == StateConfirm? "Confirmation" : "Restoration");
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20, 20));
         ImGui::SetNextWindowPos(ImVec2(480.0f, 272.0f), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         
-        if (ImGui::BeginPopupModal("Confirmation", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text("Are you sure you want to apply this sorting method?");
+        if (ImGui::BeginPopupModal(*state == StateConfirm? "Confirmation" : "Restoration", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text(*state == StateConfirm? "Are you sure you want to apply this sorting method?" : "Are you sure you want to restore this backup?");
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
-            ImGui::Text("A restart is required to view the changes.");
+            ImGui::Text("You must reboot your device for the changes to take effect.");
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
             if (ImGui::Button("Ok", ImVec2(120, 0))) {
-                AppList::Backup();
-                AppList::Save(entries);
+                if (*state == StateConfirm) {
+                    AppList::Backup();
+
+                    if (!backupExists)
+                        backupExists = true;
+                    
+                    AppList::Save(entries);
+                }
+                else if (*state == StateRestore)
+                    AppList::Restore();
+                
                 ImGui::CloseCurrentPopup();
                 *state = StateDone;
             }
@@ -137,7 +164,7 @@ namespace GUI {
 
     int RenderLoop(void) {
         bool done = false;
-
+        backupExists = FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db");
         std::vector<AppInfoIcon> entries;
         std::vector<AppInfoPage> pages;
         std::vector<AppInfoFolder> folders;
@@ -189,18 +216,17 @@ namespace GUI {
                 }
                 
                 ImGui::SameLine();
-                
-                if (sort == SortDefault) {
-                    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-                    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-                }
 
+                DisableButtonInit(sort == SortDefault);
                 if (ImGui::Button("Apply Sort"))
                     state = StateConfirm;
+                DisableButtonExit(sort == SortDefault);
 
-                if (sort == SortDefault) {
-                    ImGui::PopItemFlag();
-                    ImGui::PopStyleVar();
+                if (backupExists) {
+                    ImGui::SameLine();
+                    
+                    if (ImGui::Button("Restore Backup"))
+                        state = StateRestore;
                 }
                 
                 ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
@@ -246,7 +272,11 @@ namespace GUI {
                     break;
 
                 case StateConfirm:
-                    GUI::ConfirmPopup(&state, entries);
+                    GUI::ConfirmRestorePopup(&state, entries);
+                    break;
+                
+                case StateRestore:
+                    GUI::ConfirmRestorePopup(&state, entries);
                     break;
 
                 case StateDone:
