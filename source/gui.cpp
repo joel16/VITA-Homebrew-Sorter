@@ -174,6 +174,7 @@ namespace GUI {
 
                 if (ImGui::RadioButton("Asc", sort == SortAsc)) {
                     sort = SortAsc;
+                    ret = AppList::Get(entries, pages, folders);
                     std::sort(entries.begin(), entries.end(), AppList::SortAlphabeticalAsc);
                     AppList::Sort(entries, pages, folders);
                 }
@@ -182,6 +183,7 @@ namespace GUI {
                 
                 if (ImGui::RadioButton("Desc", sort == SortDesc)) {
                     sort = SortDesc;
+                    ret = AppList::Get(entries, pages, folders);
                     std::sort(entries.begin(), entries.end(), AppList::SortAlphabeticalDesc);
                     AppList::Sort(entries, pages, folders);
                 }
