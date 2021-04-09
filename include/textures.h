@@ -2,6 +2,7 @@
 #define _VITA_HB_SORTER_TEXTURES_H_
 
 #include <vitaGL.h>
+#include <vector>
 
 typedef struct {
     GLuint id = 0;
@@ -10,6 +11,7 @@ typedef struct {
 } Tex;
 
 extern Tex splash;
+extern std::vector<Tex> icons;
 
 namespace Textures {
     bool Init(void);

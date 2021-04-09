@@ -6,6 +6,7 @@
 #include "textures.h"
 
 Tex splash;
+std::vector<Tex> icons;
 
 namespace Textures {
     static bool LoadImage(unsigned char *data, GLint format, Tex *texture, void (*free_func)(void *)) {    
@@ -65,12 +66,23 @@ namespace Textures {
     }
 
     bool Init(void) {
-        bool ret = Textures::LoadImagePNG("app0:res/splashscreen.png", &splash);
+        icons.resize(2);
+
+        bool ret = Textures::LoadImagePNG("app0:res/app.png", &icons[0]);
         IM_ASSERT(ret);
+
+        ret = Textures::LoadImagePNG("app0:res/folder.png", &icons[1]);
+        IM_ASSERT(ret);
+
+        ret = Textures::LoadImagePNG("app0:res/splashscreen.png", &splash);
+        IM_ASSERT(ret);
+
         return 0;
     }
 
     void Exit(void) {
+        glDeleteTextures(1, &icons[0].id);
+        glDeleteTextures(1, &icons[1].id);
         glDeleteTextures(1, &splash.id);
     }
 }

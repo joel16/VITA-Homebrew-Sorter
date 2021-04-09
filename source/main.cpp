@@ -13,6 +13,7 @@ extern "C" {
 }
 
 int _newlib_heap_size_user = 192 * 1024 * 1024;
+//204, 59, 69
 
 namespace Services {
 	void SetDefaultTheme(void) {
@@ -20,7 +21,7 @@ namespace Services {
 		ImGui::GetStyle().GrabRounding = 4.0f;
 		
 		ImVec4 *colors = ImGui::GetStyle().Colors;
-		colors[ImGuiCol_Text] = ImVec4(0.74f, 0.74f, 0.75f, 1.00f);
+		colors[ImGuiCol_Text] = ImVec4(0.85f, 0.85f, 0.85f, 1.00f);
 		colors[ImGuiCol_TextDisabled] = ImVec4(0.36f, 0.42f, 0.47f, 1.00f);
 		colors[ImGuiCol_WindowBg] = ImVec4(0.05f, 0.07f, 0.13f, 1.00f);
 		colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);

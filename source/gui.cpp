@@ -79,6 +79,11 @@ namespace GUI {
             SortAsc,
             SortDesc
         };
+
+        enum IconType {
+            App,
+            Folder,
+        };
         
         static int sort = 0;
         ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter |
@@ -129,7 +134,8 @@ namespace GUI {
                 
                 ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
 
-                if (ImGui::BeginTable("AppEntries", 4, tableFlags)) {
+                if (ImGui::BeginTable("AppEntries", 5, tableFlags)) {
+                    ImGui::TableSetupColumn(" ");
                     ImGui::TableSetupColumn("Title");
                     ImGui::TableSetupColumn("Page ID");
                     ImGui::TableSetupColumn("Page Number");
@@ -138,6 +144,9 @@ namespace GUI {
 
                     for (int i = 0; i < entries.size(); i++) {
                         ImGui::TableNextRow();
+                        ImGui::TableNextColumn();
+
+                        ImGui::Image(reinterpret_cast<ImTextureID>(entries[i].folder? icons[Folder].id : icons[App].id), ImVec2(20, 20));
                         ImGui::TableNextColumn();
                         
                         ImGui::Selectable(entries[i].title.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
