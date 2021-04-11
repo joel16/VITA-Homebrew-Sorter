@@ -2,6 +2,7 @@
 #define _VITA_HB_SORTER_UTILS_H_
 
 #include <psp2/ctrl.h>
+#include <psp2/system_param.h>
 
 /// Checks whether a result code indicates success.
 #define R_SUCCEEDED(res)   ((res)>=0)
@@ -16,6 +17,8 @@ namespace Utils {
     int EndAppUtil(void);
     int GetEnterButton(void);
     int GetCancelButton(void);
+    int GetDateFormat(void);
+    void GetDateString(char string[24], SceSystemParamDateFormat format, SceDateTime *time);
 }
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef _VITA_HB_SORTER_APP_LIST
-#define _VITA_HB_SORTER_APP_LIST
+#ifndef _VITA_HB_SORTER_APP_LIST_H_
+#define _VITA_HB_SORTER_APP_LIST_H_
 
 #include <vector>
 #include <string>

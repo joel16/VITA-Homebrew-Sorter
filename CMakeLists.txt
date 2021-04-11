@@ -44,6 +44,8 @@ add_executable(${PROJECT_NAME}
   source/applist.cpp
   source/fs.cpp
   source/gui.cpp
+  source/keyboard.cpp
+  source/loadouts.cpp
   source/log.cpp
   source/main.cpp
   source/textures.cpp
@@ -84,6 +86,7 @@ vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
   FILE sce_sys/livearea/contents/startup.png sce_sys/livearea/contents/startup.png
   FILE sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
   FILE res/app.png res/app.png
+  FILE res/db.png res/db.png
   FILE res/folder.png res/folder.png
   FILE res/splashscreen.png res/splashscreen.png
 )

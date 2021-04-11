@@ -7,7 +7,9 @@
 #include "fs.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui_internal.h"
+#include "loadouts.h"
 #include "textures.h"
+#include "utils.h"
 
 namespace Renderer {
     static void Start(void) {
@@ -29,6 +31,7 @@ namespace GUI {
         StateNone,
         StateConfirm,
         StateRestore,
+        StateLoadoutRestore,
         StateDone
     };
 
@@ -97,13 +100,29 @@ namespace GUI {
         }
     }
 
-    static void ConfirmRestorePopup(State *state, std::vector<AppInfoIcon> &entries) {
+    static void ConfirmRestorePopup(State *state, std::vector<AppInfoIcon> &entries, const char *name) {
         ImGui::OpenPopup(*state == StateConfirm? "Confirmation" : "Restoration");
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20, 20));
         ImGui::SetNextWindowPos(ImVec2(480.0f, 272.0f), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         
         if (ImGui::BeginPopupModal(*state == StateConfirm? "Confirmation" : "Restoration", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text(*state == StateConfirm? "Are you sure you want to apply this sorting method?" : "Are you sure you want to restore this backup?");
+            switch (*state) {
+                case StateConfirm:
+                    ImGui::Text("Are you sure you want to apply this sorting method?");
+                    break;
+
+                case StateRestore:
+                    ImGui::Text("Are you sure you want to restore this backup?");
+                    break;
+
+                case StateLoadoutRestore:
+                    ImGui::Text("Are you sure you want to apply this loadout?");
+                    break;
+
+                default:
+                    break;
+            }
+
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
             ImGui::Text("You must reboot your device for the changes to take effect.");
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
@@ -119,6 +138,8 @@ namespace GUI {
                 }
                 else if (*state == StateRestore)
                     AppList::Restore();
+                else if (*state == StateLoadoutRestore)
+                    Loadouts::Restore(name);
                 
                 ImGui::CloseCurrentPopup();
                 *state = StateDone;
@@ -165,10 +186,14 @@ namespace GUI {
     int RenderLoop(void) {
         bool done = false;
         backupExists = FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db");
-        std::vector<AppInfoIcon> entries;
+        std::vector<AppInfoIcon> apps;
         std::vector<AppInfoPage> pages;
         std::vector<AppInfoFolder> folders;
-        int ret = AppList::Get(entries, pages, folders);
+        std::vector<SceIoDirent> loadouts;
+        int ret = AppList::Get(apps, pages, folders);
+        ret = FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
+        int date_format = Utils::GetDateFormat();
+        std::string loadout_name;
 
         enum SortMode {
             SortDefault,
@@ -178,7 +203,8 @@ namespace GUI {
 
         enum IconType {
             App,
-            Folder,
+            DB,
+            Folder
         };
         
         static SortMode sort = SortDefault;
@@ -192,76 +218,130 @@ namespace GUI {
             GUI::SetupWindow();
 
             if (ImGui::Begin("VITA Homebrew Sorter", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
-                if (ImGui::RadioButton("Default", sort == SortDefault)) {
-                    sort = SortDefault;
-                    ret = AppList::Get(entries, pages, folders);
-                }
+                if (ImGui::BeginTabBar("VITA Homebrew Sorter tabs", ImGuiTabBarFlags_None)) {
+                    if (ImGui::BeginTabItem("Sort/Backup")) {
+                        ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
 
-                ImGui::SameLine();
-
-                if (ImGui::RadioButton("Asc", sort == SortAsc)) {
-                    sort = SortAsc;
-                    ret = AppList::Get(entries, pages, folders);
-                    std::sort(entries.begin(), entries.end(), AppList::SortAlphabeticalAsc);
-                    AppList::Sort(entries, pages, folders);
-                }
-                
-                ImGui::SameLine();
-                
-                if (ImGui::RadioButton("Desc", sort == SortDesc)) {
-                    sort = SortDesc;
-                    ret = AppList::Get(entries, pages, folders);
-                    std::sort(entries.begin(), entries.end(), AppList::SortAlphabeticalDesc);
-                    AppList::Sort(entries, pages, folders);
-                }
-                
-                ImGui::SameLine();
-
-                DisableButtonInit(sort == SortDefault);
-                if (ImGui::Button("Apply Sort"))
-                    state = StateConfirm;
-                DisableButtonExit(sort == SortDefault);
-
-                if (backupExists) {
-                    ImGui::SameLine();
-                    
-                    if (ImGui::Button("Restore Backup"))
-                        state = StateRestore;
-                }
-                
-                ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-
-                if (ImGui::BeginTable("AppEntries", 5, tableFlags)) {
-                    ImGui::TableSetupColumn("");
-                    ImGui::TableSetupColumn("Title");
-                    ImGui::TableSetupColumn("Page ID");
-                    ImGui::TableSetupColumn("Page Number");
-                    ImGui::TableSetupColumn("Position");
-                    ImGui::TableHeadersRow();
-
-                    for (int i = 0; i < entries.size(); i++) {
-                        ImGui::TableNextRow();
-                        ImGui::TableNextColumn();
-
-                        ImGui::Image(reinterpret_cast<ImTextureID>(entries[i].folder? icons[Folder].id : icons[App].id), ImVec2(20, 20));
-                        ImGui::TableNextColumn();
+                        if (ImGui::RadioButton("Default", sort == SortDefault)) {
+                            sort = SortDefault;
+                            ret = AppList::Get(apps, pages, folders);
+                        }
                         
-                        ImGui::Selectable(entries[i].title.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
+                        ImGui::SameLine();
                         
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%d", entries[i].pageId);
+                        if (ImGui::RadioButton("Asc", sort == SortAsc)) {
+                            sort = SortAsc;
+                            ret = AppList::Get(apps, pages, folders);
+                            std::sort(apps.begin(), apps.end(), AppList::SortAlphabeticalAsc);
+                            AppList::Sort(apps, pages, folders);
+                        }
                         
-                        ImGui::TableNextColumn();
-                        if (entries[i].pageNo < 0)
-                            ImGui::Text("Inside folder");
-                        else
-                            ImGui::Text("%d", entries[i].pageNo);
+                        ImGui::SameLine();
                         
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%d", entries[i].pos);
+                        if (ImGui::RadioButton("Desc", sort == SortDesc)) {
+                            sort = SortDesc;
+                            ret = AppList::Get(apps, pages, folders);
+                            std::sort(apps.begin(), apps.end(), AppList::SortAlphabeticalDesc);
+                            AppList::Sort(apps, pages, folders);
+                        }
+                        
+                        ImGui::SameLine();
+                        
+                        DisableButtonInit(sort == SortDefault);
+                        if (ImGui::Button("Apply Sort"))
+                            state = StateConfirm;
+                        DisableButtonExit(sort == SortDefault);
+                        
+                        if (backupExists) {
+                            ImGui::SameLine();
+                            
+                            if (ImGui::Button("Restore Backup"))
+                                state = StateRestore;
+                        }
+                        
+                        ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
+                        
+                        if (ImGui::BeginTable("AppList", 5, tableFlags)) {
+                            ImGui::TableSetupColumn("");
+                            ImGui::TableSetupColumn("Title");
+                            ImGui::TableSetupColumn("Page ID");
+                            ImGui::TableSetupColumn("Page Number");
+                            ImGui::TableSetupColumn("Position");
+                            ImGui::TableHeadersRow();
+                            
+                            for (int i = 0; i < apps.size(); i++) {
+                                ImGui::TableNextRow();
+                                
+                                ImGui::TableNextColumn();
+                                ImGui::Image(reinterpret_cast<ImTextureID>(apps[i].folder? icons[Folder].id : icons[App].id), ImVec2(20, 20));
+                                
+                                ImGui::TableNextColumn();
+                                ImGui::Selectable(apps[i].title.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
+                                
+                                ImGui::TableNextColumn();
+                                ImGui::Text("%d", apps[i].pageId);
+                                
+                                ImGui::TableNextColumn();
+                                if (apps[i].pageNo < 0)
+                                    ImGui::Text("Inside folder");
+                                else
+                                    ImGui::Text("%d", apps[i].pageNo);
+                                    
+                                ImGui::TableNextColumn();
+                                ImGui::Text("%d", apps[i].pos);
+                            }
+                            
+                            ImGui::EndTable();
+                        }
+
+                        ImGui::EndTabItem();
                     }
-                    
-                    ImGui::EndTable();
+                    if (ImGui::BeginTabItem("Loadouts")) {
+                        ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
+
+                        if (ImGui::Button("Backup current loadout")) {
+                            if (R_SUCCEEDED(Loadouts::Backup()))
+                                FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
+                        }
+
+                        ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
+                        
+                        if (ImGui::BeginTable("LoadoutList", 3, tableFlags)) {
+                            ImGui::TableSetupColumn("");
+                            ImGui::TableSetupColumn("Title");
+                            ImGui::TableSetupColumn("Date");
+                            ImGui::TableHeadersRow();
+
+                            if (loadouts.empty()) {
+                                ImGui::Text("No loadouts found");
+                            }
+                            else {
+                                for (int i = 0; i < loadouts.size(); i++) {
+                                    ImGui::TableNextRow();
+                                    
+                                    ImGui::TableNextColumn();
+                                    ImGui::Image(reinterpret_cast<ImTextureID>(icons[DB].id), ImVec2(20, 20));
+                                    
+                                    ImGui::TableNextColumn();
+                                    if (ImGui::Selectable(loadouts[i].d_name, false, ImGuiSelectableFlags_SpanAllColumns)) {
+                                        loadout_name = loadouts[i].d_name;
+                                        state = StateLoadoutRestore;
+                                    }
+
+                                    ImGui::TableNextColumn();
+                                    char date[16];
+                                    Utils::GetDateString(date, static_cast<SceSystemParamDateFormat>(date_format), &loadouts[i].d_stat.st_mtime);
+                                    ImGui::Text(date);
+                                }
+                            }
+
+                            ImGui::EndTable();
+                        }
+                        
+                        ImGui::EndTabItem();
+                    }
+
+                    ImGui::EndTabBar();
                 }
             }
 
@@ -272,11 +352,15 @@ namespace GUI {
                     break;
 
                 case StateConfirm:
-                    GUI::ConfirmRestorePopup(&state, entries);
+                    GUI::ConfirmRestorePopup(&state, apps, loadout_name.c_str());
                     break;
                 
                 case StateRestore:
-                    GUI::ConfirmRestorePopup(&state, entries);
+                    GUI::ConfirmRestorePopup(&state, apps, loadout_name.c_str());
+                    break;
+
+                case StateLoadoutRestore:
+                    GUI::ConfirmRestorePopup(&state, apps, loadout_name.c_str());
                     break;
 
                 case StateDone:

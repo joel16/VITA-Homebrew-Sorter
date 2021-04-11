@@ -66,12 +66,15 @@ namespace Textures {
     }
 
     bool Init(void) {
-        icons.resize(2);
+        icons.resize(3);
 
         bool ret = Textures::LoadImagePNG("app0:res/app.png", &icons[0]);
         IM_ASSERT(ret);
 
-        ret = Textures::LoadImagePNG("app0:res/folder.png", &icons[1]);
+        ret = Textures::LoadImagePNG("app0:res/db.png", &icons[1]);
+        IM_ASSERT(ret);
+
+        ret = Textures::LoadImagePNG("app0:res/folder.png", &icons[2]);
         IM_ASSERT(ret);
 
         ret = Textures::LoadImagePNG("app0:res/splashscreen.png", &splash);
@@ -81,8 +84,9 @@ namespace Textures {
     }
 
     void Exit(void) {
-        glDeleteTextures(1, &icons[0].id);
-        glDeleteTextures(1, &icons[1].id);
         glDeleteTextures(1, &splash.id);
+        glDeleteTextures(1, &icons[2].id);
+        glDeleteTextures(1, &icons[1].id);
+        glDeleteTextures(1, &icons[0].id);
     }
 }
