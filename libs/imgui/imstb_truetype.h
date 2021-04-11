@@ -485,8 +485,9 @@ int main(int arg, char **argv)
 
    #ifndef STBTT_memcpy
    #include <string.h>
-   #define STBTT_memcpy       memcpy
-   #define STBTT_memset       memset
+   #include <psp2/kernel/clib.h>
+   #define STBTT_memcpy       sceClibMemcpy
+   #define STBTT_memset       sceClibMemset
    #endif
 #endif
 

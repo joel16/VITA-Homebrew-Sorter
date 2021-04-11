@@ -6,7 +6,7 @@ namespace Loadouts {
     constexpr char path[] = "ur0:/shell/db/app.db";
 
     int Backup(void) {
-        std::string filename = Keyboard::GetText("Enter loadout name", "");
+        std::string filename = Keyboard::GetText("Enter loadout name");
         if (filename.empty())
             return -1;
         

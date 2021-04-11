@@ -18,7 +18,7 @@ namespace Keyboard {
     static uint16_t buffer[SCE_IME_DIALOG_MAX_TEXT_LENGTH];
     std::string text = std::string();
 
-    int Init(const std::string &title, const std::string &initial_text) {
+    int Init(const std::string &title) {
         if (running)
             return -1;
 
@@ -27,7 +27,6 @@ namespace Keyboard {
 
         // UTF8 -> UTF16
         std::u16string title_u16 = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.from_bytes(title.data());
-        std::u16string initial_text_u16 = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.from_bytes(initial_text.data());
 
         SceImeDialogParam param;
         sceImeDialogParamInit(&param);
@@ -37,9 +36,8 @@ namespace Keyboard {
         param.type = SCE_IME_TYPE_DEFAULT;
         param.option = 0;
             
-        param.title = (const SceWChar16 *)title_u16.c_str();
+        param.title = reinterpret_cast<const SceWChar16 *>(title_u16.c_str());
         param.maxTextLength = SCE_IME_DIALOG_MAX_TEXT_LENGTH;
-        param.initialText = (SceWChar16 *)initial_text_u16.c_str();
         param.inputTextBuffer = buffer;
         
         int ret = 0;
@@ -59,15 +57,15 @@ namespace Keyboard {
         SceCommonDialogStatus status = sceImeDialogGetStatus();
         if (status == SCE_COMMON_DIALOG_STATUS_FINISHED) {
             SceImeDialogResult result;
-            std::memset(&result, 0, sizeof(SceImeDialogResult));
+            sceClibMemset(&result, 0, sizeof(SceImeDialogResult));
             sceImeDialogGetResult(&result);
 
             if ((result.button == SCE_IME_DIALOG_BUTTON_CLOSE) || (result.button == SCE_IME_DIALOG_BUTTON_ENTER)) {
-                std::u16string buffer_u16 = (char16_t *)buffer;
+                std::u16string buffer_u16 = reinterpret_cast<char16_t *>(buffer);
                 text = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(buffer_u16.data());
             }
             else
-                status = (SceCommonDialogStatus)SCE_COMMON_DIALOG_STATUS_CANCELLED;
+                status = static_cast<SceCommonDialogStatus>(SCE_COMMON_DIALOG_STATUS_CANCELLED);
             
             sceImeDialogTerm();
             running = false;
@@ -76,8 +74,8 @@ namespace Keyboard {
         return status;
     }
 
-    std::string GetText(const std::string &title, const std::string &initial_text) {
-        if (R_FAILED(Init(title, initial_text)))
+    std::string GetText(const std::string &title) {
+        if (R_FAILED(Init(title)))
             return std::string();
         
         bool done = false;
