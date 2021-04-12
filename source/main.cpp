@@ -54,8 +54,8 @@ namespace Services {
 		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
 		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
 		colors[ImGuiCol_Tab] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
-		colors[ImGuiCol_TabHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
-		colors[ImGuiCol_TabActive] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+		colors[ImGuiCol_TabHovered] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
+		colors[ImGuiCol_TabActive] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
 		colors[ImGuiCol_TabUnfocused] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
 		colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
 		colors[ImGuiCol_PlotLines] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
