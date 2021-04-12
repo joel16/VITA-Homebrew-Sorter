@@ -1,3 +1,0 @@
-[submodule "libs/libsqlite"]
-	path = libs/libsqlite
-	url = https://github.com/VitaSmith/libsqlite.git

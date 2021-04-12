@@ -25,7 +25,7 @@ add_definitions(-DSQLITE_OS_OTHER=1 -DSQLITE_TEMP_STORE=3 -DSQLITE_THREADSAFE=0)
 
 include_directories(
   libs/imgui
-  libs/libsqlite/libsqlite
+  libs/libsqlite
   include
 )
 
@@ -40,7 +40,7 @@ add_executable(${PROJECT_NAME}
   libs/imgui/imgui_impl_vitagl.cpp
   libs/imgui/imgui_tables.cpp
   libs/imgui/imgui_widgets.cpp
-  libs/libsqlite/libsqlite/sqlite.c
+  libs/libsqlite/sqlite.c
   source/applist.cpp
   source/fs.cpp
   source/gui.cpp
