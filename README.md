@@ -3,7 +3,7 @@
 A basic PS VITA homebrew that sorts the application database in SceShell alphabetically. The application also sorts apps/games inside folders as well. A backup will be made before any changes are applied to the application database. You can find the backup in `ux0:/data/VITAHomebrewSorter/app.db`.
 
 <p align="center">
-<img src="https://i.imgur.com/9kSc0Kn.png" alt="VITA Homebrew Sorter Screenshot" width="640" height="362"/>
+<img src="https://i.imgur.com/iPiawoM.png" alt="VITA Homebrew Sorter Screenshot" width="640" height="362"/>
 </p>
 
 # Disclaimer
