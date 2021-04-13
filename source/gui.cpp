@@ -32,6 +32,7 @@ namespace GUI {
         StateConfirm,
         StateRestore,
         StateLoadoutRestore,
+        StateWarning,
         StateDone
     };
 
@@ -100,75 +101,99 @@ namespace GUI {
         }
     }
 
-    static void ConfirmRestorePopup(State *state, std::vector<AppInfoIcon> &entries, const char *name) {
-        ImGui::OpenPopup(*state == StateConfirm? "Confirmation" : "Restoration");
+    static void Prompt(State *state, std::vector<AppInfoIcon> &entries, const char *name) {
+        if (*state == StateNone)
+            return;
+        
+        std::string title, prompt;
+
+        switch (*state) {
+            case StateConfirm:
+                title = "Confirm";
+                prompt = "Are you sure you want to apply this sorting method?";
+                break;
+
+            case StateRestore:
+                title = "Restore Backup";
+                prompt = "Are you sure you want to restore this backup?";
+                break;
+
+            case StateLoadoutRestore:
+                title = "Restore Loadout";
+                prompt = "Are you sure you want to apply this loadout?";
+                break;
+
+            case StateWarning:
+                title = "Warning";
+                prompt = "This loadout is outdated and may not include some newly installed apps.";
+                break;
+
+            case StateDone:
+                title = "Restart";
+                prompt = "Do you wish to restart your device?";
+                break;
+
+            default:
+                break;
+        }
+
+        ImGui::OpenPopup(title.c_str());
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20, 20));
         ImGui::SetNextWindowPos(ImVec2(480.0f, 272.0f), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         
-        if (ImGui::BeginPopupModal(*state == StateConfirm? "Confirmation" : "Restoration", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            switch (*state) {
-                case StateConfirm:
-                    ImGui::Text("Are you sure you want to apply this sorting method?");
-                    break;
+        if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text(prompt.c_str());
 
-                case StateRestore:
-                    ImGui::Text("Are you sure you want to restore this backup?");
-                    break;
-
-                case StateLoadoutRestore:
-                    ImGui::Text("Are you sure you want to apply this loadout?");
-                    break;
-
-                default:
-                    break;
+            if ((*state == StateConfirm) || (*state == StateRestore) || (*state == StateLoadoutRestore)) {
+                ImGui::Dummy(ImVec2(0.0f, 5.0f));
+                ImGui::Text("You must reboot your device for the changes to take effect.");
+            }
+            else if (*state == StateWarning) {
+                ImGui::Dummy(ImVec2(0.0f, 5.0f));
+                ImGui::Text("Do you still wish to continue restoring this loadout?");
             }
 
-            ImGui::Dummy(ImVec2(0.0f, 5.0f));
-            ImGui::Text("You must reboot your device for the changes to take effect.");
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
             if (ImGui::Button("Ok", ImVec2(120, 0))) {
-                if (*state == StateConfirm) {
-                    AppList::Backup();
-
-                    if (!backupExists)
+                switch (*state) {
+                    case StateConfirm:
+                        AppList::Backup();
                         backupExists = true;
-                    
-                    AppList::Save(entries);
+                        AppList::Save(entries);
+                        *state = StateDone;
+                        break;
+
+                    case StateRestore:
+                        AppList::Restore();
+                        *state = StateDone;
+                        break;
+
+                    case StateLoadoutRestore:
+                        if (AppList::Compare(name)) {
+                            *state = StateWarning;
+                        }
+                        else {
+                            Loadouts::Restore(name);
+                            *state = StateDone;
+                        }
+                        break;
+
+                    case StateWarning:
+                        Loadouts::Restore(name);
+                        *state = StateDone;
+                        break;
+
+                    case StateDone:
+                        scePowerRequestColdReset();
+                        break;
+
+                    default:
+                        break;
                 }
-                else if (*state == StateRestore)
-                    AppList::Restore();
-                else if (*state == StateLoadoutRestore)
-                    Loadouts::Restore(name);
-                
+
                 ImGui::CloseCurrentPopup();
-                *state = StateDone;
             }
-
-            ImGui::SameLine(0.0f, 15.0f);
-
-            if (ImGui::Button("Cancel", ImVec2(120, 0))) {
-                ImGui::CloseCurrentPopup();
-                *state = StateNone;
-            }
-
-            ImGui::EndPopup();
-        }
-
-        ImGui::PopStyleVar();
-    }
-
-    static void RestartPopup(State *state) {
-        ImGui::OpenPopup("Restart");
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20, 20));
-        ImGui::SetNextWindowPos(ImVec2(480.0f, 272.0f), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-        
-        if (ImGui::BeginPopupModal("Restart", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text("Do you wish to restart your device?");
-            ImGui::Dummy(ImVec2(0.0f, 5.0f));
-
-            if (ImGui::Button("Ok", ImVec2(120, 0)))
-                scePowerRequestColdReset();
 
             ImGui::SameLine(0.0f, 15.0f);
 
@@ -346,29 +371,7 @@ namespace GUI {
             }
 
             GUI::ExitWindow();
-
-            switch(state) {
-                case StateNone:
-                    break;
-
-                case StateConfirm:
-                    GUI::ConfirmRestorePopup(&state, apps, loadout_name.c_str());
-                    break;
-                
-                case StateRestore:
-                    GUI::ConfirmRestorePopup(&state, apps, loadout_name.c_str());
-                    break;
-
-                case StateLoadoutRestore:
-                    GUI::ConfirmRestorePopup(&state, apps, loadout_name.c_str());
-                    break;
-
-                case StateDone:
-                    GUI::RestartPopup(&state);
-                    break;
-
-            }
-
+            GUI::Prompt(&state, apps, loadout_name.c_str());
             Renderer::End(ImVec4(0.45f, 0.55f, 0.60f, 1.00f));
         }
 

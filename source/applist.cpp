@@ -226,4 +226,64 @@ namespace AppList {
         
         return 0;
     }
+
+    bool Compare(const char *db_name) {
+        std::vector<std::string> app_entries;
+        std::vector<std::string> loadout_entries;
+        std::vector<std::string> diff_entries;
+
+        sqlite3 *db;
+        int ret = sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE, nullptr);
+
+        if (ret)
+            return false;
+
+        std::string query = "SELECT title FROM tbl_appinfo_icon;";
+        
+        sqlite3_stmt *stmt;
+        ret = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr);
+
+        while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
+            std::string entry = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+            app_entries.push_back(entry);
+        }
+        
+        if (ret != SQLITE_DONE) {
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            return false;
+        }
+
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+
+        std::string db_path = "ux0:data/VITAHomebrewSorter/loadouts/" + std::string(db_name);
+        ret = sqlite3_open_v2(db_path.c_str(), &db, SQLITE_OPEN_READWRITE, nullptr);
+
+        if (ret)
+            return false;
+        
+        ret = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr);
+
+        while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
+            std::string entry = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+            loadout_entries.push_back(entry);
+        }
+        
+        if (ret != SQLITE_DONE) {
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            return false;
+        }
+        
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+
+        if (app_entries.empty() || loadout_entries.empty())
+            return false;
+        
+        std::set_difference(app_entries.begin(), app_entries.end(), loadout_entries.begin(), loadout_entries.end(),
+        std::inserter(diff_entries, diff_entries.begin()));
+        return (diff_entries.size() > 0);
+    }
 }

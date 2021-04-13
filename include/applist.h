@@ -31,6 +31,7 @@ namespace AppList {
     void Sort(std::vector<AppInfoIcon> &entries, std::vector<AppInfoPage> &pages, std::vector<AppInfoFolder> &folders);
     int Backup(void);
     int Restore(void);
+    bool Compare(const char *db_name);
 }
 
 #endif
