@@ -1,6 +1,6 @@
 # VITA-Homebrew-Sorter
 
-A basic PS VITA homebrew that sorts the application database in SceShell alphabetically. The application also sorts apps/games inside folders as well. A backup will be made before any changes are applied to the application database. You can find the backup in `ux0:/data/VITAHomebrewSorter/app.db`.
+A basic PS VITA homebrew application that sorts the application database in your LiveArea. The application sorts apps and games that are inside folders as well. This applications also allows you to backup your current "loadout" that you can switch into as you wish. A backup will be made before any changes are applied to the application database. This backup is overwritten each time you use the sort option. You can find the backup in `ux0:/data/VITAHomebrewSorter/backups/app.db`. 
 
 <p align="center">
 <img src="https://i.imgur.com/iPiawoM.png" alt="VITA Homebrew Sorter Screenshot" width="640" height="362"/>
@@ -14,7 +14,7 @@ I am not responsible for anything that happens to your device after the use of t
 - Sort app list alphabetically (descending)
 - Display app list after sorting is applied using ImGui's tables API.
 - Backup application database before sorting is applied.
-- Custom loadouts to backup/restore. (Do note: If you install a new application after you've already backed up your loadout and then attempt to restore this loadout, the new application will not appear on LiveArea. You can work around this by overwriting your load out backups each time an app is installed or simple re-install the VPK. Although the new application's icon will not appear on LiveArea, its data should not be lost.)
+- Custom loadouts to backup/restore. (Do note: If you install a new application after you've already backed up your loadout and then attempt to restore this loadout, the new application will not appear on LiveArea and a warning message will be displayed. You can work around this by overwriting your load out backups each time an app is installed or simple re-install the VPK. Although the new application's icon will not appear on LiveArea, its data should not be lost.)
 
 # Credits:
 - Rinnegatamante for [vitaGL](https://github.com/Rinnegatamante/vitaGL)
