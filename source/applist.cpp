@@ -189,7 +189,14 @@ namespace AppList {
     }
 
     int Backup(void) {
-        const std::string backup_path = "ux0:/data/VITAHomebrewSorter/backup/app.db";
+        // Create an original backup for first time use.
+        std::string backup_path;
+
+        if (!FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db.bkp"))
+            backup_path = "ux0:/data/VITAHomebrewSorter/backup/app.db.bkp";
+        else
+            backup_path = "ux0:/data/VITAHomebrewSorter/backup/app.db";
+        
         unsigned char *data = nullptr;
         SceOff size = 0;
 
@@ -209,11 +216,17 @@ namespace AppList {
     }
 
     int Restore(void) {
+        std::string restore_path;
         unsigned char *data = nullptr;
         SceOff size = 0;
 
+        if (!FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db"))
+            restore_path = "ux0:/data/VITAHomebrewSorter/backup/app.db.bkp";
+        else
+            restore_path = "ux0:/data/VITAHomebrewSorter/backup/app.db";
+
         int ret = 0;
-        if (R_FAILED(ret = FS::ReadFile("ux0:/data/VITAHomebrewSorter/backup/app.db", &data, &size)))
+        if (R_FAILED(ret = FS::ReadFile(restore_path.c_str(), &data, &size)))
             return ret;
             
         if (FS::FileExists(path)) {

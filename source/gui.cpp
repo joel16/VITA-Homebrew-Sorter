@@ -210,7 +210,7 @@ namespace GUI {
 
     int RenderLoop(void) {
         bool done = false;
-        backupExists = FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db");
+        backupExists = (FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db") || FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db.bkp"));
         std::vector<AppInfoIcon> apps;
         std::vector<AppInfoPage> pages;
         std::vector<AppInfoFolder> folders;
