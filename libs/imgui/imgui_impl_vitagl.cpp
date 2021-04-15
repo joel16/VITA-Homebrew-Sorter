@@ -210,21 +210,8 @@ bool ImGui_ImplVitaGL_CreateDeviceObjects() {
 	font_config.OversampleV = 1;
 	font_config.PixelSnapH = 1;
 	
-	SceUID font = 0;
-	font = sceIoOpen("sa0:/data/font/pvf/ltn0.pvf", SCE_O_RDONLY, 0);
-	if (font < 0)
-		return false;
-		
-	SceOff font_size = sceIoLseek(font, 0, SEEK_END);
-	unsigned char *font_buf = new unsigned char[font_size];
-	
-	sceIoLseek(font, 0, SCE_SEEK_SET);
-	sceIoRead(font, font_buf, font_size);
-	sceIoClose(font);
-	
-	io.Fonts->AddFontFromMemoryTTF(font_buf, font_size, 20.0f, &font_config, io.Fonts->GetGlyphRangesDefault());
+	io.Fonts->AddFontFromFileTTF("sa0:/data/font/pvf/jpn0.pvf", 20.0f, &font_config, io.Fonts->GetGlyphRangesJapanese());
 	io.Fonts->GetTexDataAsRGBA32(static_cast<unsigned char **>(&pixels), &width, &height);
-	delete[] font_buf;
 	
 	// Upload texture to graphics system
 	GLint last_texture;
