@@ -110,7 +110,7 @@ namespace GUI {
         switch (*state) {
             case StateConfirm:
                 title = "Confirm";
-                prompt = "Are you sure you want to apply this sorting method?";
+                prompt = "Are you sure you want to apply this sorting method? This may take a minute.";
                 break;
 
             case StateRestore:

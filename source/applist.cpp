@@ -9,7 +9,7 @@
 #include "utils.h"
 
 namespace AppList {
-    constexpr char path[] = "ur0:/shell/db/app.db";
+    constexpr char path[] = "ux0:/vpk/app1.db";
 
     int Get(std::vector<AppInfoIcon> &entries, std::vector<AppInfoPage> &pages, std::vector<AppInfoFolder> &folders) {
         entries.clear();
@@ -23,7 +23,7 @@ namespace AppList {
             return -1;
 
         std::string query = 
-            std::string("SELECT info_icon.pageId, info_page.pageNo, info_icon.pos, info_icon.title, info_icon.titleId, info_icon.icon0Type ")
+            std::string("SELECT info_icon.pageId, info_page.pageNo, info_icon.pos, info_icon.title, info_icon.titleId, info_icon.reserved01, info_icon.icon0Type ")
             + "FROM tbl_appinfo_icon info_icon "
             + "INNER JOIN tbl_appinfo_page info_page "
             + "ON info_icon.pageId = info_page.pageId;";
@@ -38,7 +38,9 @@ namespace AppList {
             entry.pos = sqlite3_column_int(stmt, 2);
             entry.title = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
             std::snprintf(entry.titleId, 16, "%s", sqlite3_column_text(stmt, 4));
-            entry.folder = (std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5)))) == 7? true : false;
+            if (std::string(entry.titleId) == "(null)")
+                entry.reserved01 = (std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5))));
+            entry.folder = (std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6)))) == 7? true : false;
             entries.push_back(entry);
         }
         
@@ -98,7 +100,8 @@ namespace AppList {
                 std::string("UPDATE tbl_appinfo_icon ")
                 + "SET pageId = " + std::to_string(entries[i].pageId) + ", pos = " + std::to_string(counter) + " "
                 + "WHERE "
-                + (titleId == "(null)"? "title = '" + entries[i].title + "';" : "titleId = '" + titleId + "';");
+                + (titleId == "(null)"? "title = '" + entries[i].title + "'" : "titleId = '" + titleId + "'")
+                + (entries[i].folder == true? " AND reserved01 = " + std::to_string(entries[i].reserved01) + ";" : ";");
             
             char *error;
             ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
@@ -119,11 +122,12 @@ namespace AppList {
                 std::string("UPDATE tbl_appinfo_icon ")
                 + "SET pageId = " + std::to_string(entries[i].pageId) + ", pos = " + std::to_string(entries[i].pos) + " "
                 + "WHERE "
-                + (titleId == "(null)"? "title = '" + entries[i].title + "';" : "titleId = '" + titleId + "';");
+                + (titleId == "(null)"? "title = '" + entries[i].title + "'" : "titleId = '" + titleId + "'")
+                + (entries[i].folder == true? " AND reserved01 = " + std::to_string(entries[i].reserved01) + ";" : ";");
             
             char *error;
             ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
-
+            
             if (ret != SQLITE_OK) {
                 Log::Error("sqlite3_exec error: %s\n", error);
                 sqlite3_free(error);

@@ -10,6 +10,7 @@ typedef struct AppInfoIcon {
     int pos = 0;
     std::string title;
     char titleId[16];
+    int reserved01 = 0;
     bool folder = false;
 } AppInfoIcon;
 
