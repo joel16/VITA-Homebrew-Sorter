@@ -9,7 +9,7 @@
 #include "utils.h"
 
 namespace AppList {
-    constexpr char path[] = "ux0:/vpk/app1.db";
+    constexpr char path[] = "ur0:/shell/db/app.db";
 
     int Get(std::vector<AppInfoIcon> &entries, std::vector<AppInfoPage> &pages, std::vector<AppInfoFolder> &folders) {
         entries.clear();
@@ -127,7 +127,7 @@ namespace AppList {
             
             char *error;
             ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
-            
+
             if (ret != SQLITE_OK) {
                 Log::Error("sqlite3_exec error: %s\n", error);
                 sqlite3_free(error);
