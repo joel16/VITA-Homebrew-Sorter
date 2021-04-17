@@ -110,6 +110,7 @@ namespace AppList {
                 Log::Error("sqlite3_exec error: %s\n", error);
                 sqlite3_free(error);
                 sqlite3_close(db);
+                AppList::Restore(); // Restore from backup incase sort fails
                 return ret;
             }
 
@@ -132,6 +133,7 @@ namespace AppList {
                 Log::Error("sqlite3_exec error: %s\n", error);
                 sqlite3_free(error);
                 sqlite3_close(db);
+                AppList::Restore(); // Restore from backup incase sort fails
                 return ret;
             }
         }
