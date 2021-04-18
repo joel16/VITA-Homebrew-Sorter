@@ -12,14 +12,15 @@
 #include "utils.h"
 
 namespace Renderer {
-    static void Start(void) {
-        ImGui_ImplVitaGL_NewFrame();
-    }
     
-    static void End(ImVec4 clear_color) {
+    static void End(bool clear, ImVec4 clear_color) {
         glViewport(0, 0, static_cast<int>(ImGui::GetIO().DisplaySize.x), static_cast<int>(ImGui::GetIO().DisplaySize.y));
-        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
+
+        if (clear) {
+            glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+            glClear(GL_COLOR_BUFFER_BIT);
+        }
+
         ImGui::Render();
         ImGui_ImplVitaGL_RenderDrawData(ImGui::GetDrawData());
         vglSwapBuffers(GL_FALSE);
@@ -33,7 +34,8 @@ namespace GUI {
         StateRestore,
         StateLoadoutRestore,
         StateWarning,
-        StateDone
+        StateDone,
+        StateError
     };
 
     static bool backupExists = false;
@@ -83,7 +85,7 @@ namespace GUI {
         while(!done) {
             sceRtcGetCurrentTick(&now);
 
-            Renderer::Start();
+            ImGui_ImplVitaGL_NewFrame();
             GUI::SetupWindow();
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
@@ -94,7 +96,7 @@ namespace GUI {
             
             GUI::ExitWindow();
             ImGui::PopStyleVar();
-            Renderer::End(ImVec4(0.05f, 0.07f, 0.13f, 1.00f));
+            Renderer::End(true, ImVec4(0.05f, 0.07f, 0.13f, 1.00f));
 
             if ((now.tick - start.tick) >= 10000000)
                 done = true;
@@ -133,6 +135,11 @@ namespace GUI {
                 prompt = "Do you wish to restart your device?";
                 break;
 
+            case StateError:
+                title = "Error";
+                prompt = "An error occured and has been logged. The app will restore your app.db backup.";
+                break;
+
             default:
                 break;
         }
@@ -160,8 +167,10 @@ namespace GUI {
                     case StateConfirm:
                         AppList::Backup();
                         backupExists = true;
-                        AppList::Save(entries);
-                        *state = StateDone;
+                        if ((AppList::Save(entries)) == 0)
+                            *state = StateDone;
+                        else
+                            *state = StateError;
                         break;
 
                     case StateRestore:
@@ -186,6 +195,10 @@ namespace GUI {
 
                     case StateDone:
                         scePowerRequestColdReset();
+                        break;
+
+                    case StateError:
+                        *state = StateNone;
                         break;
 
                     default:
@@ -239,7 +252,7 @@ namespace GUI {
             ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY;
         
         while (!done) {
-            Renderer::Start();
+            ImGui_ImplVitaGL_NewFrame();
             GUI::SetupWindow();
 
             if (ImGui::Begin("VITA Homebrew Sorter", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
@@ -372,7 +385,7 @@ namespace GUI {
 
             GUI::ExitWindow();
             GUI::Prompt(&state, apps, loadout_name.c_str());
-            Renderer::End(ImVec4(0.45f, 0.55f, 0.60f, 1.00f));
+            Renderer::End(true, ImVec4(0.45f, 0.55f, 0.60f, 1.00f));
         }
 
         return 0;
