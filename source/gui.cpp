@@ -232,7 +232,7 @@ namespace GUI {
         ret = FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
         int date_format = Utils::GetDateFormat();
         std::string loadout_name;
-
+        
         enum SortMode {
             SortDefault,
             SortAsc,
@@ -314,7 +314,7 @@ namespace GUI {
                                 ImGui::Image(reinterpret_cast<ImTextureID>(apps[i].folder? icons[Folder].id : icons[App].id), ImVec2(20, 20));
                                 
                                 ImGui::TableNextColumn();
-                                ImGui::Selectable(apps[i].title.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
+                                ImGui::Selectable(apps[i].title, false, ImGuiSelectableFlags_SpanAllColumns);
                                 
                                 ImGui::TableNextColumn();
                                 ImGui::Text("%d", apps[i].pageId);
@@ -345,15 +345,15 @@ namespace GUI {
                         ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
                         
                         if (ImGui::BeginTable("LoadoutList", 3, tableFlags)) {
-                            ImGui::TableSetupColumn("");
-                            ImGui::TableSetupColumn("Title");
-                            ImGui::TableSetupColumn("Date");
-                            ImGui::TableHeadersRow();
-
                             if (loadouts.empty()) {
                                 ImGui::Text("No loadouts found");
                             }
                             else {
+                                ImGui::TableSetupColumn("");
+                                ImGui::TableSetupColumn("Title");
+                                ImGui::TableSetupColumn("Date");
+                                ImGui::TableHeadersRow();
+
                                 for (int i = 0; i < loadouts.size(); i++) {
                                     ImGui::TableNextRow();
                                     

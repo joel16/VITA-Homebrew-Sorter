@@ -36,7 +36,7 @@ namespace AppList {
             entry.pageId = std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
             entry.pageNo = sqlite3_column_int(stmt, 1);
             entry.pos = sqlite3_column_int(stmt, 2);
-            entry.title = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+            std::snprintf(entry.title, 128, "%s", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)));
             std::snprintf(entry.titleId, 16, "%s", sqlite3_column_text(stmt, 4));
             if (std::string(entry.titleId) == "(null)")
                 entry.reserved01 = (std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5))));
@@ -62,14 +62,16 @@ namespace AppList {
         ret = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr);
 
         while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
-            AppInfoPage entry;
-            entry.pageId = sqlite3_column_int(stmt, 0);
-            entry.pageNo = sqlite3_column_int(stmt, 1);
-            pages.push_back(entry);
-
+            AppInfoPage page;
             AppInfoFolder folder;
+            int pageNo = sqlite3_column_int(stmt, 1);
 
-            if (entry.pageNo < 0) {
+            if (pageNo >= 0) {
+                page.pageId = sqlite3_column_int(stmt, 0);
+                page.pageNo = pageNo;
+                pages.push_back(page);
+            }
+            else if (pageNo < 0) {
                 folder.pageId = sqlite3_column_int(stmt, 0);
                 folders.push_back(folder);
             }
@@ -80,7 +82,7 @@ namespace AppList {
             sqlite3_close(db);
             return ret;
         }
-        
+
         sqlite3_finalize(stmt);
         sqlite3_close(db);
         return 0;
@@ -95,13 +97,19 @@ namespace AppList {
 
         // Hacky workaround to avoid SQL's unique constraints. Please look away!
         for (int i = 0, counter = 10; i < entries.size(); i++, counter++) {
+            std::string title = entries[i].title;
             std::string titleId = entries[i].titleId;
             std::string query = 
                 std::string("UPDATE tbl_appinfo_icon ")
                 + "SET pageId = " + std::to_string(entries[i].pageId) + ", pos = " + std::to_string(counter) + " "
-                + "WHERE "
-                + (titleId == "(null)"? "title = '" + entries[i].title + "'" : "titleId = '" + titleId + "'")
-                + (entries[i].folder == true? " AND reserved01 = " + std::to_string(entries[i].reserved01) + ";" : ";");
+                + "WHERE ";
+
+            if ((title == "(null)") && (titleId == "(null)"))
+                query.append("reserved01 = " + std::to_string(entries[i].reserved01) + ";");
+            else {
+                query.append((titleId == "(null)"? "title = '" + title + "'" : "titleId = '" + titleId + "'")
+                + (entries[i].folder == true? " AND reserved01 = " + std::to_string(entries[i].reserved01) + ";" : ";"));
+            }
             
             char *error;
             ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
@@ -118,14 +126,20 @@ namespace AppList {
         }
 
         for (int i = 0; i < entries.size(); i++) {
+            std::string title = entries[i].title;
             std::string titleId = entries[i].titleId;
             std::string query = 
                 std::string("UPDATE tbl_appinfo_icon ")
                 + "SET pageId = " + std::to_string(entries[i].pageId) + ", pos = " + std::to_string(entries[i].pos) + " "
-                + "WHERE "
-                + (titleId == "(null)"? "title = '" + entries[i].title + "'" : "titleId = '" + titleId + "'")
-                + (entries[i].folder == true? " AND reserved01 = " + std::to_string(entries[i].reserved01) + ";" : ";");
-            
+                + "WHERE ";
+
+            if ((title == "(null)") && (titleId == "(null)"))
+                query.append("reserved01 = " + std::to_string(entries[i].reserved01) + ";");
+            else {
+                query.append((titleId == "(null)"? "title = '" + title + "'" : "titleId = '" + titleId + "'")
+                + (entries[i].folder == true? " AND reserved01 = " + std::to_string(entries[i].reserved01) + ";" : ";"));
+            }
+
             char *error;
             ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
 
