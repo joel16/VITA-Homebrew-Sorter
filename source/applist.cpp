@@ -111,18 +111,13 @@ namespace AppList {
                 + (entries[i].folder == true? " AND reserved01 = " + std::to_string(entries[i].reserved01) + ";" : ";"));
             }
             
-            char *error;
-            ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
-
+            ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, nullptr);
             if (ret != SQLITE_OK) {
-                Log::Error("sqlite3_exec error: %s\n", error);
-                sqlite3_free(error);
+                Log::Error("sqlite3_exec error %s\n", query.c_str());
                 sqlite3_close(db);
                 AppList::Restore(); // Restore from backup incase sort fails
                 return ret;
             }
-
-            sqlite3_free(error);
         }
 
         for (int i = 0; i < entries.size(); i++) {
@@ -140,12 +135,9 @@ namespace AppList {
                 + (entries[i].folder == true? " AND reserved01 = " + std::to_string(entries[i].reserved01) + ";" : ";"));
             }
 
-            char *error;
-            ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
-
+            ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, nullptr);
             if (ret != SQLITE_OK) {
-                Log::Error("sqlite3_exec error: %s\n", error);
-                sqlite3_free(error);
+                Log::Error("sqlite3_exec error %s\n", query.c_str());
                 sqlite3_close(db);
                 AppList::Restore(); // Restore from backup incase sort fails
                 return ret;
