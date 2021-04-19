@@ -9,7 +9,7 @@
 #include "utils.h"
 
 namespace AppList {
-    constexpr char path[] = "ur0:/shell/db/app.db";
+    constexpr char path[] = "ur0:shell/db/app.db";
 
     int Get(std::vector<AppInfoIcon> &entries, std::vector<AppInfoPage> &pages, std::vector<AppInfoFolder> &folders) {
         entries.clear();
@@ -201,54 +201,80 @@ namespace AppList {
     }
 
     int Backup(void) {
-        // Create an original backup for first time use.
+        int ret = 0;
         std::string backup_path;
-
-        if (!FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db.bkp"))
-            backup_path = "ux0:/data/VITAHomebrewSorter/backup/app.db.bkp";
-        else
-            backup_path = "ux0:/data/VITAHomebrewSorter/backup/app.db";
-        
         unsigned char *data = nullptr;
         SceOff size = 0;
 
-        int ret = 0;
-        if (R_FAILED(ret = FS::ReadFile(path, &data, &size)))
+        if (!FS::FileExists("ux0:data/VITAHomebrewSorter/backup/app.db.bkp"))
+            backup_path = "ux0:data/VITAHomebrewSorter/backup/app.db.bkp";
+        else
+            backup_path = "ux0:data/VITAHomebrewSorter/backup/app.db";
+
+        if (R_FAILED(ret = FS::GetFileSize(path, &size)))
             return ret;
 
-        if (FS::FileExists(backup_path)) {
-            if (R_FAILED(ret = FS::RemoveFile(backup_path)))
-                return ret;
+        data = new unsigned char[size];
+        if (!data)
+            return -1;
+        
+        if (R_FAILED(ret = FS::ReadFile(path, data, size))) {
+            delete[] data;
+            return ret;
         }
 
-        if (R_FAILED(ret = FS::WriteFile(backup_path, data, size)))
-            return ret; 
-        
+        if (FS::FileExists(backup_path)) {
+            if (R_FAILED(ret = FS::RemoveFile(backup_path))) {
+                delete[] data;
+                return ret;
+            }
+        }
+
+        if (R_FAILED(ret = FS::WriteFile(backup_path, data, size))) {
+            delete[] data;
+            return ret;
+        }
+
+        delete[] data;
         return 0;
     }
 
     int Restore(void) {
+        int ret = 0;
         std::string restore_path;
         unsigned char *data = nullptr;
         SceOff size = 0;
 
-        if (!FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db"))
-            restore_path = "ux0:/data/VITAHomebrewSorter/backup/app.db.bkp";
+        if (!FS::FileExists("ux0:data/VITAHomebrewSorter/backup/app.db"))
+            restore_path = "ux0:data/VITAHomebrewSorter/backup/app.db.bkp";
         else
-            restore_path = "ux0:/data/VITAHomebrewSorter/backup/app.db";
+            restore_path = "ux0:data/VITAHomebrewSorter/backup/app.db";
 
-        int ret = 0;
-        if (R_FAILED(ret = FS::ReadFile(restore_path.c_str(), &data, &size)))
+        if (R_FAILED(ret = FS::GetFileSize(restore_path, &size)))
             return ret;
+
+        data = new unsigned char[size];
+        if (!data)
+            return -1;
+        
+        if (R_FAILED(ret = FS::ReadFile(restore_path, data, size))) {
+            delete[] data;
+            return ret;
+        }
             
         if (FS::FileExists(path)) {
-            if (R_FAILED(ret = FS::RemoveFile(path)))
+            if (R_FAILED(ret = FS::RemoveFile(path))) {
+                delete[] data;
                 return ret;
+            }
         }
 
-        if (R_FAILED(ret = FS::WriteFile(path, data, size)))
-            return ret; 
-        
+        if (R_FAILED(ret = FS::WriteFile(path, data, size))) {
+            delete[] data;
+            return ret;
+        }
+
+        delete[] data;
         return 0;
     }
 

@@ -49,20 +49,30 @@ namespace FS {
         return 0;
     }
 
-    int ReadFile(const std::string &path, unsigned char **buffer, SceOff *size) {
+    int GetFileSize(const std::string &path, SceOff *size) {
+        SceIoStat stat;
         int ret = 0;
+        
+        if (R_FAILED(ret = sceIoGetstat(path.c_str(), &stat))) {
+            Log::Error("sceIoOpen(%s) failed: 0x%lx\n", path.c_str(), ret);
+            return ret;
+        }
+
+        *size = stat.st_size;
+        return 0;
+    }
+
+    int ReadFile(const std::string &path, void *data, SceSize size) {
+        int ret = 0, bytes_read = 0;
         SceUID file = 0;
 
         if (R_FAILED(ret = file = sceIoOpen(path.c_str(), SCE_O_RDONLY, 0))) {
             Log::Error("sceIoOpen(%s) failed: 0x%lx\n", path.c_str(), ret);
             return ret;
         }
-        
-        *size = sceIoLseek(file, 0, SEEK_END);
-        *buffer = new unsigned char[*size];
 
-        if (R_FAILED(ret = sceIoPread(file, *buffer, *size, SCE_SEEK_SET))) {
-            Log::Error("sceIoPread(%s) failed: 0x%lx\n", path.c_str(), ret);
+        if (R_FAILED(ret = bytes_read = sceIoRead(file, data, size))) {
+            Log::Error("sceIoRead(%s) failed: 0x%lx\n", path.c_str(), ret);
             return ret;
         }
 
@@ -71,7 +81,7 @@ namespace FS {
             return ret;
         }
 
-        return 0;
+        return bytes_read;
     }
 
     int WriteFile(const std::string &path, const void *data, SceSize size) {
