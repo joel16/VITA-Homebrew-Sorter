@@ -99,7 +99,7 @@ namespace GUI {
             ImGui::PopStyleVar();
             Renderer::End(true, ImVec4(0.05f, 0.07f, 0.13f, 1.00f));
 
-            if ((now.tick - start.tick) >= 8000000)
+            if ((now.tick - start.tick) >= 6000000)
                 done = true;
         }
     }

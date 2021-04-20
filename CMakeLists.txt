@@ -17,13 +17,14 @@ set(VITA_VERSION "01.20")
 
 add_definitions(-DAPP_VERSION="${VITA_VERSION}")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -g -mtune=cortex-a9 -mfpu=neon -Wall")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi -Wno-unused-but-set-variable -fno-exceptions -fno-rtti -std=gnu++17 -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -g -mtune=cortex-a9 -mfpu=neon -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi -fno-exceptions -fno-rtti -std=gnu++17 -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS -DIMGUI_ENABLE_FREETYPE")
 set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d PARENTAL_LEVEL=1")
 
 add_definitions(-DSQLITE_OS_OTHER=1 -DSQLITE_TEMP_STORE=3 -DSQLITE_THREADSAFE=0)
 
 include_directories(
+  ${VITASDK}/arm-vita-eabi/include/freetype2/
   libs/imgui
   libs/libsqlite
   include
@@ -40,6 +41,7 @@ add_executable(${PROJECT_NAME}
   libs/imgui/imgui_impl_vitagl.cpp
   libs/imgui/imgui_tables.cpp
   libs/imgui/imgui_widgets.cpp
+  libs/imgui/misc/freetype/imgui_freetype.cpp
   libs/libsqlite/sqlite.c
   source/applist.cpp
   source/fs.cpp
@@ -53,6 +55,7 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+  freetype
   png
   pthread
   lzma
