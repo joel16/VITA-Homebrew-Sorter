@@ -11,10 +11,10 @@
 namespace AppList {
     constexpr char path[] = "ur0:shell/db/app.db";
 
-    int Get(std::vector<AppInfoIcon> &entries, std::vector<AppInfoPage> &pages, std::vector<AppInfoFolder> &folders) {
-        entries.clear();
-        pages.clear();
-        folders.clear();
+    int Get(AppEntries *entries) {
+        entries->icons.clear();
+        entries->pages.clear();
+        entries->folders.clear();
 
         sqlite3 *db;
         int ret = sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE, nullptr);
@@ -32,16 +32,16 @@ namespace AppList {
         ret = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr);
 
         while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
-            AppInfoIcon entry;
-            entry.pageId = std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
-            entry.pageNo = sqlite3_column_int(stmt, 1);
-            entry.pos = sqlite3_column_int(stmt, 2);
-            std::snprintf(entry.title, 128, "%s", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)));
-            std::snprintf(entry.titleId, 16, "%s", sqlite3_column_text(stmt, 4));
-            if (std::string(entry.titleId) == "(null)")
-                entry.reserved01 = (std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5))));
-            entry.folder = (std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6)))) == 7? true : false;
-            entries.push_back(entry);
+            AppInfoIcon icon;
+            icon.pageId = std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
+            icon.pageNo = sqlite3_column_int(stmt, 1);
+            icon.pos = sqlite3_column_int(stmt, 2);
+            std::snprintf(icon.title, 128, "%s", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)));
+            std::snprintf(icon.titleId, 16, "%s", sqlite3_column_text(stmt, 4));
+            if (std::string(icon.titleId) == "(null)")
+                icon.reserved01 = (std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5))));
+            icon.folder = (std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6)))) == 7? true : false;
+            entries->icons.push_back(icon);
         }
         
         if (ret != SQLITE_DONE) {
@@ -69,11 +69,11 @@ namespace AppList {
             if (pageNo >= 0) {
                 page.pageId = sqlite3_column_int(stmt, 0);
                 page.pageNo = pageNo;
-                pages.push_back(page);
+                entries->pages.push_back(page);
             }
             else if (pageNo < 0) {
                 folder.pageId = sqlite3_column_int(stmt, 0);
-                folders.push_back(folder);
+                entries->folders.push_back(folder);
             }
         }
 
@@ -149,8 +149,8 @@ namespace AppList {
     }
 
     bool SortAlphabeticalAsc(const AppInfoIcon &entryA, const AppInfoIcon &entryB) {
-        std::string entryAname = entryA.title;
-        std::string entryBname = entryB.title;
+        std::string entryAname = sort_mode == 0? entryA.title : entryA.titleId;
+        std::string entryBname = sort_mode == 0? entryB.title : entryB.titleId;
 
         std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
         std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
@@ -162,8 +162,8 @@ namespace AppList {
     }
 
     bool SortAlphabeticalDesc(const AppInfoIcon &entryA, const AppInfoIcon &entryB) {
-        std::string entryAname = entryA.title;
-        std::string entryBname = entryB.title;
+        std::string entryAname = sort_mode == 0? entryA.title : entryA.titleId;
+        std::string entryBname = sort_mode == 0? entryB.title : entryB.titleId;
 
         std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
         std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
@@ -174,9 +174,9 @@ namespace AppList {
         return false;
     }
 
-    void Sort(std::vector<AppInfoIcon> &entries, std::vector<AppInfoPage> &pages, std::vector<AppInfoFolder> &folders) {
+    void Sort(AppEntries *entries) {
         int pos = 0, pageCounter = 0;
-        for (int i = 0; i < entries.size(); i ++) {
+        for (int i = 0; i < entries->icons.size(); i ++) {
             // Reset position
             if (pos > 9) {
                 pos = 0;
@@ -184,17 +184,17 @@ namespace AppList {
             }
             
             // App/Game belongs to a folder
-            if (entries[i].pageNo < 0) {
-                for (int j = 0; j < folders.size(); j++) {
-                    if (entries[i].pageId == folders[j].pageId) {
-                        entries[i].pos = folders[j].index;
-                        folders[j].index++;
+            if (entries->icons[i].pageNo < 0) {
+                for (int j = 0; j < entries->folders.size(); j++) {
+                    if (entries->icons[i].pageId == entries->folders[j].pageId) {
+                        entries->icons[i].pos = entries->folders[j].index;
+                        entries->folders[j].index++;
                     }
                 }
             }
             else {
-                entries[i].pos = pos;
-                entries[i].pageId = pages[pageCounter].pageId;
+                entries->icons[i].pos = pos;
+                entries->icons[i].pageId = entries->pages[pageCounter].pageId;
                 pos++;
             }
         }

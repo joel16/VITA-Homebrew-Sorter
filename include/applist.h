@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-typedef struct AppInfoIcon {
+struct AppInfoIcon {
     int pageId = 0;
     int pageNo = 0;
     int pos = 0;
@@ -12,24 +12,32 @@ typedef struct AppInfoIcon {
     char titleId[16];
     int reserved01 = 0;
     bool folder = false;
-} AppInfoIcon;
+};
 
-typedef struct AppInfoPage {
+struct AppInfoPage {
     int pageId = 0;
     int pageNo = 0;
-} AppInfoPage;
+};
 
-typedef struct AppInfoFolder {
+struct AppInfoFolder {
     int pageId = 0;
     int index = 0;
-} AppInfoFolder;
+};
+
+struct AppEntries {
+    std::vector<AppInfoIcon> icons;
+    std::vector<AppInfoPage> pages;
+    std::vector<AppInfoFolder> folders;
+};
+
+extern int sort_mode;
 
 namespace AppList {
-    int Get(std::vector<AppInfoIcon> &entries, std::vector<AppInfoPage> &pages, std::vector<AppInfoFolder> &folders);
+    int Get(AppEntries *entries);
     int Save(std::vector<AppInfoIcon> &entries);
     bool SortAlphabeticalAsc(const AppInfoIcon &entryA, const AppInfoIcon &entryB);
     bool SortAlphabeticalDesc(const AppInfoIcon &entryA, const AppInfoIcon &entryB);
-    void Sort(std::vector<AppInfoIcon> &entries, std::vector<AppInfoPage> &pages, std::vector<AppInfoFolder> &folders);
+    void Sort(AppEntries *entries);
     int Backup(void);
     int Restore(void);
     bool Compare(const char *db_name);

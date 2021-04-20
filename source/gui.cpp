@@ -11,6 +11,8 @@
 #include "textures.h"
 #include "utils.h"
 
+int sort_mode = 0;
+
 namespace Renderer {
     static void End(bool clear, ImVec4 clear_color) {
         glViewport(0, 0, static_cast<int>(ImGui::GetIO().DisplaySize.x), static_cast<int>(ImGui::GetIO().DisplaySize.y));
@@ -223,16 +225,14 @@ namespace GUI {
     int RenderLoop(void) {
         bool done = false;
         backupExists = (FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db") || FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db.bkp"));
-        std::vector<AppInfoIcon> apps;
-        std::vector<AppInfoPage> pages;
-        std::vector<AppInfoFolder> folders;
+        AppEntries entries;
         std::vector<SceIoDirent> loadouts;
-        int ret = AppList::Get(apps, pages, folders);
+        int ret = AppList::Get(&entries);
         ret = FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
         int date_format = Utils::GetDateFormat();
         std::string loadout_name;
         
-        enum SortMode {
+        enum SortBy {
             SortDefault,
             SortAsc,
             SortDesc
@@ -244,8 +244,8 @@ namespace GUI {
             Folder
         };
         
-        static SortMode sort = SortDefault;
-        static State state = StateNone;
+        SortBy sort = SortDefault;
+        State state = StateNone;
 
         ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter |
             ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY;
@@ -259,27 +259,32 @@ namespace GUI {
                     if (ImGui::BeginTabItem("Sort/Backup")) {
                         ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
 
+                        ImGui::SetNextItemWidth(100.0f);
+                        ImGui::Combo("Sort by", &sort_mode, "Title\0Title ID\0");
+
+                        ImGui::SameLine();
+
                         if (ImGui::RadioButton("Default", sort == SortDefault)) {
                             sort = SortDefault;
-                            ret = AppList::Get(apps, pages, folders);
+                            ret = AppList::Get(&entries);
                         }
                         
                         ImGui::SameLine();
                         
                         if (ImGui::RadioButton("Asc", sort == SortAsc)) {
                             sort = SortAsc;
-                            ret = AppList::Get(apps, pages, folders);
-                            std::sort(apps.begin(), apps.end(), AppList::SortAlphabeticalAsc);
-                            AppList::Sort(apps, pages, folders);
+                            ret = AppList::Get(&entries);
+                            std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAlphabeticalAsc);
+                            AppList::Sort(&entries);
                         }
                         
                         ImGui::SameLine();
                         
                         if (ImGui::RadioButton("Desc", sort == SortDesc)) {
                             sort = SortDesc;
-                            ret = AppList::Get(apps, pages, folders);
-                            std::sort(apps.begin(), apps.end(), AppList::SortAlphabeticalDesc);
-                            AppList::Sort(apps, pages, folders);
+                            ret = AppList::Get(&entries);
+                            std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAlphabeticalDesc);
+                            AppList::Sort(&entries);
                         }
                         
                         ImGui::SameLine();
@@ -306,26 +311,26 @@ namespace GUI {
                             ImGui::TableSetupColumn("Position");
                             ImGui::TableHeadersRow();
                             
-                            for (int i = 0; i < apps.size(); i++) {
+                            for (int i = 0; i < entries.icons.size(); i++) {
                                 ImGui::TableNextRow();
                                 
                                 ImGui::TableNextColumn();
-                                ImGui::Image(reinterpret_cast<ImTextureID>(apps[i].folder? icons[Folder].id : icons[App].id), ImVec2(20, 20));
+                                ImGui::Image(reinterpret_cast<ImTextureID>(entries.icons[i].folder? icons[Folder].id : icons[App].id), ImVec2(20, 20));
                                 
                                 ImGui::TableNextColumn();
-                                ImGui::Selectable(apps[i].title, false, ImGuiSelectableFlags_SpanAllColumns);
+                                ImGui::Selectable(entries.icons[i].title, false, ImGuiSelectableFlags_SpanAllColumns);
                                 
                                 ImGui::TableNextColumn();
-                                ImGui::Text("%d", apps[i].pageId);
+                                ImGui::Text("%d", entries.icons[i].pageId);
                                 
                                 ImGui::TableNextColumn();
-                                if (apps[i].pageNo < 0)
+                                if (entries.icons[i].pageNo < 0)
                                     ImGui::Text("Inside folder");
                                 else
-                                    ImGui::Text("%d", apps[i].pageNo);
+                                    ImGui::Text("%d", entries.icons[i].pageNo);
                                     
                                 ImGui::TableNextColumn();
-                                ImGui::Text("%d", apps[i].pos);
+                                ImGui::Text("%d", entries.icons[i].pos);
                             }
                             
                             ImGui::EndTable();
@@ -383,7 +388,7 @@ namespace GUI {
             }
 
             GUI::ExitWindow();
-            GUI::Prompt(&state, apps, loadout_name.c_str());
+            GUI::Prompt(&state, entries.icons, loadout_name.c_str());
             Renderer::End(true, ImVec4(0.45f, 0.55f, 0.60f, 1.00f));
         }
 
