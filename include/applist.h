@@ -10,7 +10,8 @@ struct AppInfoIcon {
     int pos = 0;
     char title[128];
     char titleId[16];
-    int reserved01 = 0;
+    char reserved01[16];
+    char reserved02[128];
     bool folder = false;
 };
 

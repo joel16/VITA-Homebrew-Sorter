@@ -23,7 +23,8 @@ namespace AppList {
             return -1;
 
         std::string query = 
-            std::string("SELECT info_icon.pageId, info_page.pageNo, info_icon.pos, info_icon.title, info_icon.titleId, info_icon.reserved01, info_icon.icon0Type ")
+            std::string("SELECT info_icon.pageId, info_page.pageNo, info_icon.pos, info_icon.title, info_icon.titleId, info_icon.reserved01, ")
+            + "info_icon.reserved02, info_icon.icon0Type "
             + "FROM tbl_appinfo_icon info_icon "
             + "INNER JOIN tbl_appinfo_page info_page "
             + "ON info_icon.pageId = info_page.pageId;";
@@ -36,11 +37,11 @@ namespace AppList {
             icon.pageId = std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
             icon.pageNo = sqlite3_column_int(stmt, 1);
             icon.pos = sqlite3_column_int(stmt, 2);
-            std::snprintf(icon.title, 128, "%s", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)));
+            std::snprintf(icon.title, 128, "%s", sqlite3_column_text(stmt, 3));
             std::snprintf(icon.titleId, 16, "%s", sqlite3_column_text(stmt, 4));
-            if (std::string(icon.titleId) == "(null)")
-                icon.reserved01 = (std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5))));
-            icon.folder = (std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6)))) == 7? true : false;
+            std::snprintf(icon.reserved01, 16, "%s", sqlite3_column_text(stmt, 5));
+            std::snprintf(icon.reserved02, 128, "%s", sqlite3_column_text(stmt, 6));
+            icon.folder = (std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7)))) == 7? true : false;
             entries->icons.push_back(icon);
         }
         
@@ -99,21 +100,27 @@ namespace AppList {
         for (int i = 0, counter = 10; i < entries.size(); i++, counter++) {
             std::string title = entries[i].title;
             std::string titleId = entries[i].titleId;
+            std::string reserved01 = entries[i].reserved01;
+            std::string reserved02 = entries[i].reserved02;
             std::string query = 
                 std::string("UPDATE tbl_appinfo_icon ")
                 + "SET pageId = " + std::to_string(entries[i].pageId) + ", pos = " + std::to_string(counter) + " "
                 + "WHERE ";
 
-            if ((title == "(null)") && (titleId == "(null)"))
-                query.append("reserved01 = " + std::to_string(entries[i].reserved01) + ";");
+            if ((title == "(null)") && (titleId == "(null)")) {
+                if (reserved01 != "(null)")
+                    query.append("reserved01 = " + reserved01 + ";");
+                else if (reserved02 != "(null)")
+                    query.append("reserved02 = '" + reserved02 + "';");
+            }
             else {
                 query.append((titleId == "(null)"? "title = '" + title + "'" : "titleId = '" + titleId + "'")
-                + (entries[i].folder == true? " AND reserved01 = " + std::to_string(entries[i].reserved01) + ";" : ";"));
+                + (entries[i].folder == true? " AND reserved01 = " + reserved01 + ";" : ";"));
             }
             
             ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, nullptr);
             if (ret != SQLITE_OK) {
-                Log::Error("sqlite3_exec error %s\n", query.c_str());
+                Log::Error("sqlite3_exec1 error %s\n", query.c_str());
                 sqlite3_close(db);
                 AppList::Restore(); // Restore from backup incase sort fails
                 return ret;
@@ -123,21 +130,27 @@ namespace AppList {
         for (int i = 0; i < entries.size(); i++) {
             std::string title = entries[i].title;
             std::string titleId = entries[i].titleId;
+            std::string reserved01 = entries[i].reserved01;
+            std::string reserved02 = entries[i].reserved02;
             std::string query = 
                 std::string("UPDATE tbl_appinfo_icon ")
                 + "SET pageId = " + std::to_string(entries[i].pageId) + ", pos = " + std::to_string(entries[i].pos) + " "
                 + "WHERE ";
 
-            if ((title == "(null)") && (titleId == "(null)"))
-                query.append("reserved01 = " + std::to_string(entries[i].reserved01) + ";");
+            if ((title == "(null)") && (titleId == "(null)")) {
+                if (reserved01 != "(null)")
+                    query.append("reserved01 = " + reserved01 + ";");
+                else if (reserved02 != "(null)")
+                    query.append("reserved02 = '" + reserved02 + "';");
+            }
             else {
                 query.append((titleId == "(null)"? "title = '" + title + "'" : "titleId = '" + titleId + "'")
-                + (entries[i].folder == true? " AND reserved01 = " + std::to_string(entries[i].reserved01) + ";" : ";"));
+                + (entries[i].folder == true? " AND reserved01 = " + reserved01 + ";" : ";"));
             }
 
             ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, nullptr);
             if (ret != SQLITE_OK) {
-                Log::Error("sqlite3_exec error %s\n", query.c_str());
+                Log::Error("sqlite3_exec2 error %s\n", query.c_str());
                 sqlite3_close(db);
                 AppList::Restore(); // Restore from backup incase sort fails
                 return ret;
