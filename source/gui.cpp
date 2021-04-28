@@ -318,7 +318,9 @@ namespace GUI {
                                 ImGui::Image(reinterpret_cast<ImTextureID>(entries.icons[i].folder? icons[Folder].id : icons[App].id), ImVec2(20, 20));
                                 
                                 ImGui::TableNextColumn();
-                                ImGui::Selectable(entries.icons[i].title, false, ImGuiSelectableFlags_SpanAllColumns);
+                                std::string title = std::to_string(i) + ") ";
+                                title.append(entries.icons[i].title);
+                                ImGui::Selectable(title.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
                                 
                                 ImGui::TableNextColumn();
                                 ImGui::Text("%d", entries.icons[i].pageId);
