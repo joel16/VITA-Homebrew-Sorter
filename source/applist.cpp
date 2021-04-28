@@ -10,6 +10,7 @@
 
 namespace AppList {
     constexpr char path[] = "ur0:shell/db/app.db";
+    constexpr char path_edit[] = "ur0:shell/db/app.vhb.db";
 
     int Get(AppEntries *entries) {
         entries->icons.clear();
@@ -91,10 +92,16 @@ namespace AppList {
 
     int Save(std::vector<AppInfoIcon> &entries) {
         sqlite3 *db;
-        int ret = sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE, nullptr);
-
-        if (ret)
+        int ret = 0;
+        
+        if (R_FAILED(ret = FS::CopyFile(path, path_edit)))
             return ret;
+
+        ret = sqlite3_open_v2(path_edit, &db, SQLITE_OPEN_READWRITE, nullptr);
+        if (ret) {
+            FS::RemoveFile(path_edit);
+            return ret;
+        }
 
         // Hacky workaround to avoid SQL's unique constraints. Please look away!
         for (int i = 0, counter = 10; i < entries.size(); i++, counter++) {
@@ -122,7 +129,7 @@ namespace AppList {
             if (ret != SQLITE_OK) {
                 Log::Error("sqlite3_exec1 error %s\n", query.c_str());
                 sqlite3_close(db);
-                AppList::Restore(); // Restore from backup incase sort fails
+                FS::RemoveFile(path_edit);
                 return ret;
             }
         }
@@ -152,12 +159,16 @@ namespace AppList {
             if (ret != SQLITE_OK) {
                 Log::Error("sqlite3_exec2 error %s\n", query.c_str());
                 sqlite3_close(db);
-                AppList::Restore(); // Restore from backup incase sort fails
+                FS::RemoveFile(path_edit);
                 return ret;
             }
         }
 
         sqlite3_close(db);
+
+        if (R_FAILED(ret = FS::CopyFile(path_edit, path)))
+            return ret;
+        
         return 0;
     }
 
@@ -216,78 +227,30 @@ namespace AppList {
     int Backup(void) {
         int ret = 0;
         std::string backup_path;
-        unsigned char *data = nullptr;
-        SceOff size = 0;
-
+        
         if (!FS::FileExists("ux0:data/VITAHomebrewSorter/backup/app.db.bkp"))
             backup_path = "ux0:data/VITAHomebrewSorter/backup/app.db.bkp";
         else
             backup_path = "ux0:data/VITAHomebrewSorter/backup/app.db";
-
-        if (R_FAILED(ret = FS::GetFileSize(path, &size)))
+            
+        if (R_FAILED(ret = FS::CopyFile(path, backup_path)))
             return ret;
-
-        data = new unsigned char[size];
-        if (!data)
-            return -1;
-        
-        if (R_FAILED(ret = FS::ReadFile(path, data, size))) {
-            delete[] data;
-            return ret;
-        }
-
-        if (FS::FileExists(backup_path)) {
-            if (R_FAILED(ret = FS::RemoveFile(backup_path))) {
-                delete[] data;
-                return ret;
-            }
-        }
-
-        if (R_FAILED(ret = FS::WriteFile(backup_path, data, size))) {
-            delete[] data;
-            return ret;
-        }
-
-        delete[] data;
+            
         return 0;
     }
 
     int Restore(void) {
         int ret = 0;
         std::string restore_path;
-        unsigned char *data = nullptr;
-        SceOff size = 0;
 
         if (!FS::FileExists("ux0:data/VITAHomebrewSorter/backup/app.db"))
             restore_path = "ux0:data/VITAHomebrewSorter/backup/app.db.bkp";
         else
             restore_path = "ux0:data/VITAHomebrewSorter/backup/app.db";
 
-        if (R_FAILED(ret = FS::GetFileSize(restore_path, &size)))
+        if (R_FAILED(ret = FS::CopyFile(restore_path, path)))
             return ret;
-
-        data = new unsigned char[size];
-        if (!data)
-            return -1;
         
-        if (R_FAILED(ret = FS::ReadFile(restore_path, data, size))) {
-            delete[] data;
-            return ret;
-        }
-            
-        if (FS::FileExists(path)) {
-            if (R_FAILED(ret = FS::RemoveFile(path))) {
-                delete[] data;
-                return ret;
-            }
-        }
-
-        if (R_FAILED(ret = FS::WriteFile(path, data, size))) {
-            delete[] data;
-            return ret;
-        }
-
-        delete[] data;
         return 0;
     }
 
