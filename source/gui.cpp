@@ -260,8 +260,11 @@ namespace GUI {
                         ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
 
                         ImGui::SetNextItemWidth(100.0f);
-                        ImGui::Combo("Sort by", &sort_mode, "Title\0Title ID\0");
-
+                        if (ImGui::Combo("Sort by", &sort_mode, "Title\0Title ID\0")) {
+                            sort = SortDefault;
+                            ret = AppList::Get(&entries);
+                        }
+                        
                         ImGui::SameLine();
 
                         if (ImGui::RadioButton("Default", sort == SortDefault)) {
