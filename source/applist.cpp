@@ -168,7 +168,8 @@ namespace AppList {
 
         if (R_FAILED(ret = FS::CopyFile(path_edit, path)))
             return ret;
-        
+
+        FS::RemoveFile(path_edit);
         return 0;
     }
 
