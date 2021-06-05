@@ -77,33 +77,6 @@ namespace GUI {
         }
     }
 
-    void RenderSplash(void) {
-        bool done = false;
-        SceRtcTick start, now;
-
-        sceRtcGetCurrentTick(&start);
-
-        while(!done) {
-            sceRtcGetCurrentTick(&now);
-
-            ImGui_ImplVitaGL_NewFrame();
-            GUI::SetupWindow();
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-
-            if (ImGui::Begin("splash", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar)) {
-                ImGui::SetCursorPos((ImGui::GetContentRegionAvail() - ImVec2((splash.width), (splash.height))) * 0.5f);
-                ImGui::Image(reinterpret_cast<ImTextureID>(splash.id), ImVec2(splash.width, splash.height));
-            }
-            
-            GUI::ExitWindow();
-            ImGui::PopStyleVar();
-            Renderer::End(true, ImVec4(0.05f, 0.07f, 0.13f, 1.00f));
-
-            if ((now.tick - start.tick) >= 6000000)
-                done = true;
-        }
-    }
-
     static void Prompt(State *state, std::vector<AppInfoIcon> &entries, const char *name) {
         if (*state == StateNone)
             return;

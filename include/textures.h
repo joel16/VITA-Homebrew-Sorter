@@ -10,7 +10,6 @@ typedef struct {
     int height = 0;
 } Tex;
 
-extern Tex splash;
 extern std::vector<Tex> icons;
 
 namespace Textures {

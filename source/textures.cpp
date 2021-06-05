@@ -5,7 +5,6 @@
 #include "log.h"
 #include "textures.h"
 
-Tex splash;
 std::vector<Tex> icons;
 
 namespace Textures {
@@ -76,15 +75,11 @@ namespace Textures {
 
         ret = Textures::LoadImagePNG("app0:res/folder.png", &icons[2]);
         IM_ASSERT(ret);
-
-        ret = Textures::LoadImagePNG("app0:res/splashscreen.png", &splash);
-        IM_ASSERT(ret);
-
+        
         return 0;
     }
 
     void Exit(void) {
-        glDeleteTextures(1, &splash.id);
         glDeleteTextures(1, &icons[2].id);
         glDeleteTextures(1, &icons[1].id);
         glDeleteTextures(1, &icons[0].id);
