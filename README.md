@@ -9,6 +9,10 @@ A basic PS VITA homebrew application that sorts the application database in your
 # Disclaimer
 I am not responsible for anything that happens to your device after the use of this software. I always make sure to test my software(s) thoroughly before release. If you do encounter any problems please submit an issue with a copy of your app.db (`ur0:/shell/db/app.db`).
 
+# libshacccg
+Recent versions of vitaGL require libshacccg.suprx to be installed. If you don't already have it you can install it by following [this guide.](https://samilops2.gitbook.io/vita-troubleshooting-guide/shader-compiler/extract-libshacccg.suprx)
+
+
 # Features:
 - Sort app list by title/titleID alphabetically (ascending)
 - Sort app list by title/titleID alphabetically (descending)
