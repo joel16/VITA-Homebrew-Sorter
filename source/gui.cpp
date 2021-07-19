@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <imgui_vita.h>
+#include <psp2/power.h>
 #include <vitaGL.h>
 
 #include "applist.h"

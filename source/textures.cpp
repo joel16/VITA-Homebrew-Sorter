@@ -1,4 +1,5 @@
 #include <png.h>
+#include <psp2/kernel/clib.h>
 #include <string>
 
 #include "imgui.h"

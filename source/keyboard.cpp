@@ -1,6 +1,7 @@
 #include <codecvt>
 #include <cstring>
 #include <locale>
+#include <psp2/kernel/clib.h>
 #include <psp2/ime_dialog.h>
 #include <vitaGL.h>
 
