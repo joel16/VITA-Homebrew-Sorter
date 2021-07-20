@@ -4,13 +4,9 @@
 
 #include "gui.h"
 #include "log.h"
-#include "utils.h"
+#include "sqlite.h"
 #include "textures.h"
-
-extern "C" {
-    int sqlite3_rw_init();
-    int sqlite3_rw_exit();
-}
+#include "utils.h"
 
 int _newlib_heap_size_user = 192 * 1024 * 1024;
 
@@ -89,7 +85,7 @@ namespace Services {
 		SCE_CTRL_CANCEL = Utils::GetCancelButton();
 		
 		sceSysmoduleLoadModule(SCE_SYSMODULE_SQLITE);
-		sqlite3_rw_init();
+		SQLite::Init();
 		
 		Log::Init();
 		Textures::Init();
@@ -99,7 +95,7 @@ namespace Services {
 		// Clean up
 		Textures::Exit();
 		Log::Exit();
-		sqlite3_rw_exit();
+		SQLite::Exit();
 		sceSysmoduleUnloadModule(SCE_SYSMODULE_SQLITE);
 		Utils::EndAppUtil();
 		ImGui_ImplVitaGL_Shutdown();

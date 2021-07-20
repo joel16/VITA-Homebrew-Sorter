@@ -21,12 +21,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -g -mtune=cortex-a9 -mfpu=neon -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi -fno-exceptions -fno-rtti -std=gnu++17")
 set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d PARENTAL_LEVEL=1")
 
-add_definitions(-DSQLITE_OS_OTHER=1 -DSQLITE_TEMP_STORE=3 -DSQLITE_THREADSAFE=0)
-
 include_directories(
   ${VITASDK}/arm-vita-eabi/include/freetype2/
   libs/imgui
-  libs/libsqlite
   include
 )
 
@@ -42,7 +39,6 @@ add_executable(${PROJECT_NAME}
   libs/imgui/imgui_tables.cpp
   libs/imgui/imgui_widgets.cpp
   libs/imgui/misc/freetype/imgui_freetype.cpp
-  libs/libsqlite/sqlite.c
   source/applist.cpp
   source/fs.cpp
   source/gui.cpp
@@ -50,6 +46,7 @@ add_executable(${PROJECT_NAME}
   source/loadouts.cpp
   source/log.cpp
   source/main.cpp
+  source/sqlite.cpp
   source/textures.cpp
   source/utils.cpp
 )
