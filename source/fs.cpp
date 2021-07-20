@@ -3,6 +3,7 @@
 #include <psp2/io/dirent.h>
 #include <psp2/io/fcntl.h>
 #include <psp2/io/stat.h>
+#include <psp2/kernel/clib.h>
 #include <string>
 #include <vector>
 
@@ -185,37 +186,33 @@ namespace FS {
     }
 
     int GetDirList(const std::string &path, std::vector<SceIoDirent> &entries) {
-        int ret = 0, i = 0;
+        int ret = 0;
         SceUID dir = 0;
         entries.clear();
-
-        if (R_FAILED(dir = sceIoDopen(path.c_str()))) {
-            Log::Error("sceIoDopen(%s) failed: 0x%lx\n", path.c_str(), ret);
-            return dir;
-        }
         
-        do {
-            SceIoDirent dirent;
-            if (R_FAILED(ret = sceIoDread(dir, &dirent)))
-                Log::Error("sceIoDread(%s) failed: 0x%lx\n", path.c_str(), ret);
-            
-            if (!FS::IsDBFile(dirent.d_name))
-                continue;
-
-            if (SCE_S_ISDIR(dirent.d_stat.st_mode))
-                continue;
-            
-            entries.push_back(dirent);
-            i++;
-        } while (ret > 0);
-
-        std::sort(entries.begin(), entries.end(), FS::Sort);
-        
-        if (R_FAILED(ret = sceIoDclose(dir))) {
-            Log::Error("sceIoDclose(%s) failed: 0x%lx\n", path.c_str(), ret);
+        if (R_FAILED(ret = dir = sceIoDopen(path.c_str()))) {
+            Log::Error("sceIoDopen(%s) failed: %08x\n", path.c_str(), ret);
             return ret;
         }
 
+        do {
+            SceIoDirent entry;
+            sceClibMemset(&entry, 0, sizeof(entry));
+            ret = sceIoDread(dir, &entry);
+            
+            if (ret > 0) {
+                if (!FS::IsDBFile(entry.d_name))
+                    continue;
+                    
+                if (SCE_S_ISDIR(entry.d_stat.st_mode))
+                    continue;
+                
+                entries.push_back(entry);
+            }
+        } while (ret > 0);
+
+        std::sort(entries.begin(), entries.end(), FS::Sort);
+        sceIoDclose(dir);
         return 0;
     }
 }
