@@ -121,15 +121,15 @@ namespace Utils {
         
         switch (format) {
             case SCE_SYSTEM_PARAM_DATE_FORMAT_YYYYMMDD:
-                std::snprintf(string, 24, "%04d/%02d/%02d", local_time.year, local_time.month, local_time.day);
+                sceClibSnprintf(string, 24, "%04d/%02d/%02d", local_time.year, local_time.month, local_time.day);
                 break;
                 
             case SCE_SYSTEM_PARAM_DATE_FORMAT_DDMMYYYY:
-                std::snprintf(string, 24, "%02d/%02d/%04d", local_time.day, local_time.month, local_time.year);
+                sceClibSnprintf(string, 24, "%02d/%02d/%04d", local_time.day, local_time.month, local_time.year);
                 break;
                 
             case SCE_SYSTEM_PARAM_DATE_FORMAT_MMDDYYYY:
-                std::snprintf(string, 24, "%02d/%02d/%04d", local_time.month, local_time.day, local_time.year);
+                sceClibSnprintf(string, 24, "%02d/%02d/%04d", local_time.month, local_time.day, local_time.year);
                 break;
         }
     }

@@ -134,8 +134,8 @@ extern "C" {
 
 //#define VERBOSE 1
 #if VERBOSE
-extern int psvDebugScreenPrintf(const char *format, ...);
-#define LOG psvDebugScreenPrintf
+extern int sceClibPrintf(const char *format, ...);
+#define LOG sceClibPrintf
 #else
 #define LOG(...)
 #endif

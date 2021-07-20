@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstdio>
+#include <psp2/kernel/clib.h>
 #include <string>
 
 #include "applist.h"
@@ -38,10 +39,10 @@ namespace AppList {
             icon.pageId = std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
             icon.pageNo = sqlite3_column_int(stmt, 1);
             icon.pos = sqlite3_column_int(stmt, 2);
-            std::snprintf(icon.title, 128, "%s", sqlite3_column_text(stmt, 3));
-            std::snprintf(icon.titleId, 16, "%s", sqlite3_column_text(stmt, 4));
-            std::snprintf(icon.reserved01, 16, "%s", sqlite3_column_text(stmt, 5));
-            std::snprintf(icon.reserved02, 128, "%s", sqlite3_column_text(stmt, 6));
+            sceClibSnprintf(icon.title, 128, "%s", sqlite3_column_text(stmt, 3));
+            sceClibSnprintf(icon.titleId, 16, "%s", sqlite3_column_text(stmt, 4));
+            sceClibSnprintf(icon.reserved01, 16, "%s", sqlite3_column_text(stmt, 5));
+            sceClibSnprintf(icon.reserved02, 128, "%s", sqlite3_column_text(stmt, 6));
             icon.folder = (std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7)))) == 7? true : false;
             entries->icons.push_back(icon);
         }
