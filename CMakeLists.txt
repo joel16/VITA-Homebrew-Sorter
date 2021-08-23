@@ -57,6 +57,7 @@ target_link_libraries(${PROJECT_NAME}
   pthread
   lzma
   z
+  
   vitaGL
   vitashark
   mathneon
@@ -66,6 +67,7 @@ target_link_libraries(${PROJECT_NAME}
   SceCtrl_stub
   SceDisplay_stub
   SceGxm_stub
+  SceKernelDmacMgr_stub
   SceLibKernel_stub
   ScePower_stub
   SceShaccCg_stub
