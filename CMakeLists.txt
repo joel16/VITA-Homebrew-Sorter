@@ -57,7 +57,6 @@ target_link_libraries(${PROJECT_NAME}
   pthread
   lzma
   z
-  
   vitaGL
   vitashark
   mathneon
