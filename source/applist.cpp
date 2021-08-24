@@ -10,7 +10,7 @@
 #include "utils.h"
 
 namespace AppList {
-    constexpr char path[] = "ur0:shell/db/app.db";
+    constexpr char path[] = "ux0:vpk/app.db";
     constexpr char path_edit[] = "ur0:shell/db/app.vhb.db";
 
     int Get(AppEntries *entries) {
@@ -184,7 +184,7 @@ namespace AppList {
         return 0;
     }
 
-    bool SortAlphabeticalAsc(const AppInfoIcon &entryA, const AppInfoIcon &entryB) {
+    bool SortAppAsc(const AppInfoIcon &entryA, const AppInfoIcon &entryB) {
         std::string entryAname = sort_mode == 0? entryA.title : entryA.titleId;
         std::string entryBname = sort_mode == 0? entryB.title : entryB.titleId;
 
@@ -197,7 +197,33 @@ namespace AppList {
         return false;
     }
 
-    bool SortAlphabeticalDesc(const AppInfoIcon &entryA, const AppInfoIcon &entryB) {
+    bool SortAppDesc(const AppInfoIcon &entryA, const AppInfoIcon &entryB) {
+        std::string entryAname = sort_mode == 0? entryA.title : entryA.titleId;
+        std::string entryBname = sort_mode == 0? entryB.title : entryB.titleId;
+
+        std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
+        std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
+
+        if (entryBname.compare(entryAname) < 0)
+            return true;
+
+        return false;
+    }
+
+    bool SortChildAppAsc(const AppInfoChild &entryA, const AppInfoChild &entryB) {
+        std::string entryAname = sort_mode == 0? entryA.title : entryA.titleId;
+        std::string entryBname = sort_mode == 0? entryB.title : entryB.titleId;
+
+        std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
+        std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
+
+        if (entryAname.compare(entryBname) < 0)
+            return true;
+
+        return false;
+    }
+
+    bool SortChildAppDesc(const AppInfoChild &entryA, const AppInfoChild &entryB) {
         std::string entryAname = sort_mode == 0? entryA.title : entryA.titleId;
         std::string entryBname = sort_mode == 0? entryB.title : entryB.titleId;
 

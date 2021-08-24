@@ -46,8 +46,10 @@ extern int sort_mode;
 namespace AppList {
     int Get(AppEntries *entries);
     int Save(std::vector<AppInfoIcon> &entries);
-    bool SortAlphabeticalAsc(const AppInfoIcon &entryA, const AppInfoIcon &entryB);
-    bool SortAlphabeticalDesc(const AppInfoIcon &entryA, const AppInfoIcon &entryB);
+    bool SortAppAsc(const AppInfoIcon &entryA, const AppInfoIcon &entryB);
+    bool SortAppDesc(const AppInfoIcon &entryA, const AppInfoIcon &entryB);
+    bool SortChildAppAsc(const AppInfoChild &entryA, const AppInfoChild &entryB);
+    bool SortChildAppDesc(const AppInfoChild &entryA, const AppInfoChild &entryB);
     void Sort(AppEntries *entries);
     int Backup(void);
     int Restore(void);

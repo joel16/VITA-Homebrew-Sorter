@@ -251,7 +251,8 @@ namespace GUI {
                         if (ImGui::RadioButton("Asc", sort == SortAsc)) {
                             sort = SortAsc;
                             ret = AppList::Get(&entries);
-                            std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAlphabeticalAsc);
+                            std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAppAsc);
+                            std::sort(entries.child_apps.begin(), entries.child_apps.end(), AppList::SortChildAppAsc);
                             AppList::Sort(&entries);
                         }
                         
@@ -260,7 +261,8 @@ namespace GUI {
                         if (ImGui::RadioButton("Desc", sort == SortDesc)) {
                             sort = SortDesc;
                             ret = AppList::Get(&entries);
-                            std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAlphabeticalDesc);
+                            std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAppDesc);
+                            std::sort(entries.child_apps.begin(), entries.child_apps.end(), AppList::SortChildAppDesc);
                             AppList::Sort(&entries);
                         }
                         
@@ -288,7 +290,7 @@ namespace GUI {
                             ImGui::TableSetupColumn("Pos");
                             ImGui::TableHeadersRow();
                             
-                            for (int i = 0; i < entries.icons.size(); i++) {
+                            for (int i = 0, counter = 0; i < entries.icons.size(); i++) {
                                 if (entries.icons[i].folder) {
                                     ImGui::TableNextRow();
 
@@ -296,7 +298,7 @@ namespace GUI {
                                     ImGui::Image(reinterpret_cast<ImTextureID>(icons[Folder].id), ImVec2(20, 20));
 
                                     ImGui::TableNextColumn();
-                                    std::string title = std::to_string(i) + ") ";
+                                    std::string title = std::to_string(counter) + ") ";
                                     title.append(entries.icons[i].title);
                                     bool open = ImGui::TreeNodeEx(title.c_str(), ImGuiTreeNodeFlags_SpanFullWidth);
                                     
@@ -312,7 +314,7 @@ namespace GUI {
                                     if (open) {
                                         ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanFullWidth;
                                         int reserved01 = std::stoi(std::string(entries.icons[i].reserved01));
-                                        
+
                                         for (int j = 0; j < entries.child_apps.size(); j++) {
                                             if (entries.child_apps[j].pageNo == reserved01) {
                                                 ImGui::TableNextRow();
@@ -320,9 +322,7 @@ namespace GUI {
                                                 //ImGui::Image(reinterpret_cast<ImTextureID>(icons[App].id), ImVec2(20, 20));
 
                                                 ImGui::TableNextColumn();
-                                                std::string title = std::to_string(j) + ") ";
-                                                title.append(entries.child_apps[j].title);
-                                                ImGui::TreeNodeEx(title.c_str(), flags);
+                                                ImGui::TreeNodeEx(entries.child_apps[j].title, flags);
 
                                                 ImGui::TableNextColumn();
                                                 ImGui::Text("%d", entries.child_apps[j].pageId);
@@ -336,6 +336,8 @@ namespace GUI {
                                         }
                                         ImGui::TreePop();
                                     }
+
+                                    counter++;
                                 }
                                 else if (entries.icons[i].pageNo >= 0) {
                                     ImGui::TableNextRow();
@@ -344,7 +346,7 @@ namespace GUI {
                                     ImGui::Image(reinterpret_cast<ImTextureID>(icons[App].id), ImVec2(20, 20));
 
                                     ImGui::TableNextColumn();
-                                    std::string title = std::to_string(i) + ") ";
+                                    std::string title = std::to_string(counter) + ") ";
                                     title.append(entries.icons[i].title);
                                     ImGui::Selectable(title.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
                                     
@@ -356,6 +358,8 @@ namespace GUI {
                                         
                                     ImGui::TableNextColumn();
                                     ImGui::Text("%d", entries.icons[i].pos);
+
+                                    counter++;
                                 }
                             }
                             
