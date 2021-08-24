@@ -9,6 +9,7 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui_internal.h"
 #include "loadouts.h"
+#include "sqlite3.h"
 #include "textures.h"
 #include "utils.h"
 
@@ -409,6 +410,37 @@ namespace GUI {
 
                             ImGui::EndTable();
                         }
+                        
+                        ImGui::EndTabItem();
+                    }
+                    if (ImGui::BeginTabItem("About")) {
+                        ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
+
+                        ImGui::Indent(5.f);
+                        ImGui::TextColored(ImVec4(0.70f, 0.16f, 0.31f, 1.0f), "App Info:");
+                        ImGui::Indent(15.f);
+                        std::string version = APP_VERSION;
+                        version.erase(0, std::min(version.find_first_not_of('0'), version.size() - 1));
+                        ImGui::Text("App version: %s", version.c_str());
+                        ImGui::Text("Author: Joel16");
+                        ImGui::Text("Assets: PreetiSketch");
+                        ImGui::Text("Dear imGui version: %s", ImGui::GetVersion());
+                        ImGui::Text("SQLite 3 version: %s", sqlite3_libversion());
+
+                        ImGui::Dummy(ImVec2(0.0f, 10.0f)); // Spacing
+                        ImGui::Unindent();
+
+                        ImGui::Indent(5.f);
+                        ImGui::TextColored(ImVec4(0.70f, 0.16f, 0.31f, 1.0f), "Usage:");
+                        ImGui::Indent(15.f);
+                        std::string usage = std::string("VITA Homebrew Sorter is a basic PS VITA homebrew application that sorts the application database in your LiveArea.")
+                            + " The application sorts apps and games that are inside folders as well. This applications also allows you to backup your current 'loadout' that "
+                            + " you can switch into as you wish. A backup will be made before any changes are applied to the application database."
+                            + " This backup is overwritten each time you use the sort option. You can find the backup in ux0:/data/VITAHomebrewSorter/backups/app.db."
+                            + " \n\nIt is always recommended to restart your vita so that it can refresh your livearea/app.db for any changes (deleted icons, new folders, etc.)"
+                            + " before you run this application.";
+                        ImGui::TextWrapped(usage.c_str());
+                        ImGui::Unindent();
                         
                         ImGui::EndTabItem();
                     }

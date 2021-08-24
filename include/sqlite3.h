@@ -82,6 +82,7 @@ SQLITE_API int sqlite3_step(sqlite3_stmt*);
 SQLITE_API int sqlite3_finalize(sqlite3_stmt*);
 SQLITE_API int sqlite3_column_int(sqlite3_stmt*, int);
 SQLITE_API int sqlite3_column_text(sqlite3_stmt*, int);
+SQLITE_API const char *sqlite3_libversion(void);
 
 #ifdef __cplusplus
 }
