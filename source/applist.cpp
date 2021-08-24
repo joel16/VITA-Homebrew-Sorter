@@ -10,14 +10,14 @@
 #include "utils.h"
 
 namespace AppList {
-    constexpr char path[] = "ux0:vpk/app.db";
+    constexpr char path[] = "ur0:shell/db/app.db";
     constexpr char path_edit[] = "ur0:shell/db/app.vhb.db";
 
-    int Get(AppEntries *entries) {
-        entries->icons.clear();
-        entries->pages.clear();
-        entries->folders.clear();
-        entries->child_apps.clear();
+    int Get(AppEntries &entries) {
+        entries.icons.clear();
+        entries.pages.clear();
+        entries.folders.clear();
+        entries.child_apps.clear();
 
         sqlite3 *db;
         int ret = sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE, nullptr);
@@ -53,8 +53,8 @@ namespace AppList {
                 sceClibStrncpy(child.title, icon.title, 128);
                 sceClibStrncpy(child.titleId, icon.titleId, 16);
             }
-            entries->icons.push_back(icon);
-            entries->child_apps.push_back(child);
+            entries.icons.push_back(icon);
+            entries.child_apps.push_back(child);
         }
         
         if (ret != SQLITE_DONE) {
@@ -82,11 +82,11 @@ namespace AppList {
             if (pageNo >= 0) {
                 page.pageId = sqlite3_column_int(stmt, 0);
                 page.pageNo = pageNo;
-                entries->pages.push_back(page);
+                entries.pages.push_back(page);
             }
             else if (pageNo < 0) {
                 folder.pageId = sqlite3_column_int(stmt, 0);
-                entries->folders.push_back(folder);
+                entries.folders.push_back(folder);
             }
         }
 
@@ -236,9 +236,9 @@ namespace AppList {
         return false;
     }
 
-    void Sort(AppEntries *entries) {
+    void Sort(AppEntries &entries) {
         int pos = 0, pageCounter = 0;
-        for (int i = 0; i < entries->icons.size(); i ++) {
+        for (int i = 0; i < entries.icons.size(); i ++) {
             // Reset position
             if (pos > 9) {
                 pos = 0;
@@ -246,17 +246,17 @@ namespace AppList {
             }
             
             // App/Game belongs to a folder
-            if (entries->icons[i].pageNo < 0) {
-                for (int j = 0; j < entries->folders.size(); j++) {
-                    if (entries->icons[i].pageId == entries->folders[j].pageId) {
-                        entries->icons[i].pos = entries->folders[j].index;
-                        entries->folders[j].index++;
+            if (entries.icons[i].pageNo < 0) {
+                for (int j = 0; j < entries.folders.size(); j++) {
+                    if (entries.icons[i].pageId == entries.folders[j].pageId) {
+                        entries.icons[i].pos = entries.folders[j].index;
+                        entries.folders[j].index++;
                     }
                 }
             }
             else {
-                entries->icons[i].pos = pos;
-                entries->icons[i].pageId = entries->pages[pageCounter].pageId;
+                entries.icons[i].pos = pos;
+                entries.icons[i].pageId = entries.pages[pageCounter].pageId;
                 pos++;
             }
         }

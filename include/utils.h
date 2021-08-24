@@ -18,7 +18,7 @@ namespace Utils {
     int GetEnterButton(void);
     int GetCancelButton(void);
     int GetDateFormat(void);
-    void GetDateString(char string[24], SceSystemParamDateFormat format, SceDateTime *time);
+    void GetDateString(char string[24], SceSystemParamDateFormat format, SceDateTime &time);
 }
 
 #endif

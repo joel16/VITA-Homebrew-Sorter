@@ -50,7 +50,7 @@ namespace FS {
         return 0;
     }
 
-    static int GetFileSize(const std::string &path, SceOff *size) {
+    static int GetFileSize(const std::string &path, SceOff &size) {
         SceIoStat stat;
         int ret = 0;
         
@@ -59,7 +59,7 @@ namespace FS {
             return ret;
         }
 
-        *size = stat.st_size;
+        size = stat.st_size;
         return 0;
     }
 
@@ -124,7 +124,7 @@ namespace FS {
         unsigned char *data = nullptr;
         SceOff size = 0;
 
-        if (R_FAILED(ret = FS::GetFileSize(src_path, &size)))
+        if (R_FAILED(ret = FS::GetFileSize(src_path, size)))
             return ret;
 
         data = new unsigned char[size];

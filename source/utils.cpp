@@ -99,25 +99,25 @@ namespace Utils {
     }
 
     // From VitaShell by TheOfficialFloW -> https://github.com/TheOfficialFloW/VitaShell/blob/master/utils.c#L349
-    static void ConvertLocalTimeToUTC(SceDateTime *time_utc, SceDateTime *time_local) {
+    static void ConvertLocalTimeToUTC(SceDateTime &time_utc, SceDateTime &time_local) {
         // sceRtcGetTick and other sceRtc functions fails with year > 9999
-        int year_local = time_local->year;
+        int year_local = time_local.year;
         int year_delta = year_local < 9999 ? 0 : year_local - 9998;
-        time_local->year -= year_delta;
+        time_local.year -= year_delta;
         
         SceRtcTick tick;
-        sceRtcGetTick(time_local, &tick);
-        time_local->year = year_local;
+        sceRtcGetTick(&time_local, &tick);
+        time_local.year = year_local;
         
         sceRtcConvertLocalTimeToUtc(&tick, &tick);
-        sceRtcSetTick(time_utc, &tick);  
-        time_utc->year += year_delta;
+        sceRtcSetTick(&time_utc, &tick);  
+        time_utc.year += year_delta;
     }
 
     // From VitaShell by TheOfficialFloW -> https://github.com/TheOfficialFloW/VitaShell/blob/master/utils.c#L364
-    void GetDateString(char string[24], SceSystemParamDateFormat format, SceDateTime *time) {
+    void GetDateString(char string[24], SceSystemParamDateFormat format, SceDateTime &time) {
         SceDateTime local_time;
-        Utils::ConvertLocalTimeToUTC(&local_time, time);
+        Utils::ConvertLocalTimeToUTC(local_time, time);
         
         switch (format) {
             case SCE_SYSTEM_PARAM_DATE_FORMAT_YYYYMMDD:

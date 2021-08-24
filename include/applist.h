@@ -44,13 +44,13 @@ struct AppEntries {
 extern int sort_mode;
 
 namespace AppList {
-    int Get(AppEntries *entries);
+    int Get(AppEntries &entries);
     int Save(std::vector<AppInfoIcon> &entries);
     bool SortAppAsc(const AppInfoIcon &entryA, const AppInfoIcon &entryB);
     bool SortAppDesc(const AppInfoIcon &entryA, const AppInfoIcon &entryB);
     bool SortChildAppAsc(const AppInfoChild &entryA, const AppInfoChild &entryB);
     bool SortChildAppDesc(const AppInfoChild &entryA, const AppInfoChild &entryB);
-    void Sort(AppEntries *entries);
+    void Sort(AppEntries &entries);
     int Backup(void);
     int Restore(void);
     bool Compare(const char *db_name);

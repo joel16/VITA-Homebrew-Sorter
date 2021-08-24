@@ -201,7 +201,7 @@ namespace GUI {
         backupExists = (FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db") || FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db.bkp"));
         AppEntries entries;
         std::vector<SceIoDirent> loadouts;
-        int ret = AppList::Get(&entries);
+        int ret = AppList::Get(entries);
         ret = FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
         int date_format = Utils::GetDateFormat();
         std::string loadout_name;
@@ -236,34 +236,34 @@ namespace GUI {
                         ImGui::SetNextItemWidth(100.0f);
                         if (ImGui::Combo("Sort by", &sort_mode, "Title\0Title ID\0")) {
                             sort = SortDefault;
-                            ret = AppList::Get(&entries);
+                            ret = AppList::Get(entries);
                         }
                         
                         ImGui::SameLine();
 
                         if (ImGui::RadioButton("Default", sort == SortDefault)) {
                             sort = SortDefault;
-                            ret = AppList::Get(&entries);
+                            ret = AppList::Get(entries);
                         }
                         
                         ImGui::SameLine();
                         
                         if (ImGui::RadioButton("Asc", sort == SortAsc)) {
                             sort = SortAsc;
-                            ret = AppList::Get(&entries);
+                            ret = AppList::Get(entries);
                             std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAppAsc);
                             std::sort(entries.child_apps.begin(), entries.child_apps.end(), AppList::SortChildAppAsc);
-                            AppList::Sort(&entries);
+                            AppList::Sort(entries);
                         }
                         
                         ImGui::SameLine();
                         
                         if (ImGui::RadioButton("Desc", sort == SortDesc)) {
                             sort = SortDesc;
-                            ret = AppList::Get(&entries);
+                            ret = AppList::Get(entries);
                             std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAppDesc);
                             std::sort(entries.child_apps.begin(), entries.child_apps.end(), AppList::SortChildAppDesc);
-                            AppList::Sort(&entries);
+                            AppList::Sort(entries);
                         }
                         
                         ImGui::SameLine();
@@ -402,7 +402,7 @@ namespace GUI {
 
                                     ImGui::TableNextColumn();
                                     char date[16];
-                                    Utils::GetDateString(date, static_cast<SceSystemParamDateFormat>(date_format), &loadouts[i].d_stat.st_mtime);
+                                    Utils::GetDateString(date, static_cast<SceSystemParamDateFormat>(date_format), loadouts[i].d_stat.st_mtime);
                                     ImGui::Text(date);
                                 }
                             }
