@@ -284,32 +284,79 @@ namespace GUI {
                             ImGui::TableSetupColumn("");
                             ImGui::TableSetupColumn("Title");
                             ImGui::TableSetupColumn("Page ID");
-                            ImGui::TableSetupColumn("Page Number");
-                            ImGui::TableSetupColumn("Position");
+                            ImGui::TableSetupColumn("Page No");
+                            ImGui::TableSetupColumn("Pos");
                             ImGui::TableHeadersRow();
                             
                             for (int i = 0; i < entries.icons.size(); i++) {
-                                ImGui::TableNextRow();
-                                
-                                ImGui::TableNextColumn();
-                                ImGui::Image(reinterpret_cast<ImTextureID>(entries.icons[i].folder? icons[Folder].id : icons[App].id), ImVec2(20, 20));
-                                
-                                ImGui::TableNextColumn();
-                                std::string title = std::to_string(i) + ") ";
-                                title.append(entries.icons[i].title);
-                                ImGui::Selectable(title.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
-                                
-                                ImGui::TableNextColumn();
-                                ImGui::Text("%d", entries.icons[i].pageId);
-                                
-                                ImGui::TableNextColumn();
-                                if (entries.icons[i].pageNo < 0)
-                                    ImGui::Text("Inside folder");
-                                else
-                                    ImGui::Text("%d", entries.icons[i].pageNo);
+                                if (entries.icons[i].folder) {
+                                    ImGui::TableNextRow();
+
+                                    ImGui::TableNextColumn();
+                                    ImGui::Image(reinterpret_cast<ImTextureID>(icons[Folder].id), ImVec2(20, 20));
+
+                                    ImGui::TableNextColumn();
+                                    std::string title = std::to_string(i) + ") ";
+                                    title.append(entries.icons[i].title);
+                                    bool open = ImGui::TreeNodeEx(title.c_str(), ImGuiTreeNodeFlags_SpanFullWidth);
                                     
-                                ImGui::TableNextColumn();
-                                ImGui::Text("%d", entries.icons[i].pos);
+                                    ImGui::TableNextColumn();
+                                    ImGui::Text("%d", entries.icons[i].pageId);
+                                    
+                                    ImGui::TableNextColumn();
+                                    ImGui::Text("%d", entries.icons[i].pageNo);
+                                        
+                                    ImGui::TableNextColumn();
+                                    ImGui::Text("%d", entries.icons[i].pos);
+
+                                    if (open) {
+                                        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanFullWidth;
+                                        int reserved01 = std::stoi(std::string(entries.icons[i].reserved01));
+                                        
+                                        for (int j = 0; j < entries.child_apps.size(); j++) {
+                                            if (entries.child_apps[j].pageNo == reserved01) {
+                                                ImGui::TableNextRow();
+                                                ImGui::TableNextColumn();
+                                                //ImGui::Image(reinterpret_cast<ImTextureID>(icons[App].id), ImVec2(20, 20));
+
+                                                ImGui::TableNextColumn();
+                                                std::string title = std::to_string(j) + ") ";
+                                                title.append(entries.child_apps[j].title);
+                                                ImGui::TreeNodeEx(title.c_str(), flags);
+
+                                                ImGui::TableNextColumn();
+                                                ImGui::Text("%d", entries.child_apps[j].pageId);
+                                                
+                                                ImGui::TableNextColumn();
+                                                ImGui::Text("-");
+                                                
+                                                ImGui::TableNextColumn();
+                                                ImGui::Text("%d", entries.child_apps[j].pos);
+                                            }
+                                        }
+                                        ImGui::TreePop();
+                                    }
+                                }
+                                else if (entries.icons[i].pageNo >= 0) {
+                                    ImGui::TableNextRow();
+                                    
+                                    ImGui::TableNextColumn();
+                                    ImGui::Image(reinterpret_cast<ImTextureID>(icons[App].id), ImVec2(20, 20));
+
+                                    ImGui::TableNextColumn();
+                                    std::string title = std::to_string(i) + ") ";
+                                    title.append(entries.icons[i].title);
+                                    ImGui::Selectable(title.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
+                                    
+                                    ImGui::TableNextColumn();
+                                    ImGui::Text("%d", entries.icons[i].pageId);
+                                    
+                                    ImGui::TableNextColumn();
+                                    ImGui::Text("%d", entries.icons[i].pageNo);
+                                        
+                                    ImGui::TableNextColumn();
+                                    ImGui::Text("%d", entries.icons[i].pos);
+                                }
                             }
                             
                             ImGui::EndTable();

@@ -25,10 +25,20 @@ struct AppInfoFolder {
     int index = 0;
 };
 
+// Info for an app that belongs to a parent folder.
+struct AppInfoChild {
+    int pageId = 0;
+    int pageNo = 0;
+    int pos = 0;
+    char title[128];
+    char titleId[16];
+};
+
 struct AppEntries {
     std::vector<AppInfoIcon> icons;
     std::vector<AppInfoPage> pages;
     std::vector<AppInfoFolder> folders;
+    std::vector<AppInfoChild> child_apps;
 };
 
 extern int sort_mode;

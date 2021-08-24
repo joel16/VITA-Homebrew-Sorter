@@ -17,6 +17,7 @@ namespace AppList {
         entries->icons.clear();
         entries->pages.clear();
         entries->folders.clear();
+        entries->child_apps.clear();
 
         sqlite3 *db;
         int ret = sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE, nullptr);
@@ -36,6 +37,7 @@ namespace AppList {
 
         while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
             AppInfoIcon icon;
+            AppInfoChild child;
             icon.pageId = std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
             icon.pageNo = sqlite3_column_int(stmt, 1);
             icon.pos = sqlite3_column_int(stmt, 2);
@@ -44,7 +46,15 @@ namespace AppList {
             sceClibSnprintf(icon.reserved01, 16, "%s", sqlite3_column_text(stmt, 5));
             sceClibSnprintf(icon.reserved02, 128, "%s", sqlite3_column_text(stmt, 6));
             icon.folder = (std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7)))) == 7? true : false;
+            if (icon.pageNo < 0) {
+                child.pageId = icon.pageId;
+                child.pageNo = icon.pageNo;
+                child.pos = icon.pos;
+                sceClibStrncpy(child.title, icon.title, 128);
+                sceClibStrncpy(child.titleId, icon.titleId, 16);
+            }
             entries->icons.push_back(icon);
+            entries->child_apps.push_back(child);
         }
         
         if (ret != SQLITE_DONE) {
