@@ -3,7 +3,7 @@
 
 namespace Loadouts {
     int Backup(void);
-    int Restore(const char *name);
+    int Restore(const std::string &db_name);
 }
 
 #endif

@@ -20,9 +20,9 @@ namespace Loadouts {
         return 0;
     }
 
-    int Restore(const char *name) {
+    int Restore(const std::string &db_name) {
         int ret = 0;
-        std::string loadout_path = "ux0:data/VITAHomebrewSorter/loadouts/" + std::string(name);
+        std::string loadout_path = "ux0:data/VITAHomebrewSorter/loadouts/" + db_name;
 
         if (R_FAILED(ret = FS::CopyFile(loadout_path, path)))
             return ret;

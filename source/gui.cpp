@@ -41,6 +41,18 @@ namespace GUI {
         StateError
     };
 
+    enum SortBy {
+        SortDefault,
+        SortAsc,
+        SortDesc
+    };
+    
+    enum IconType {
+        App,
+        DB,
+        Folder
+    };
+
     static bool backupExists = false;
 
     static void SetupPopup(const char *id) {
@@ -79,13 +91,13 @@ namespace GUI {
         }
     }
 
-    static void Prompt(State *state, std::vector<AppInfoIcon> &entries, const char *name) {
-        if (*state == StateNone)
+    static void Prompt(State &state, std::vector<AppInfoIcon> &entries, const std::string &db_name) {
+        if (state == StateNone)
             return;
         
         std::string title, prompt;
 
-        switch (*state) {
+        switch (state) {
             case StateConfirm:
                 title = "Confirm";
                 prompt = "Are you sure you want to apply this sorting method? This may take a minute.";
@@ -127,11 +139,11 @@ namespace GUI {
         if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text(prompt.c_str());
 
-            if ((*state == StateConfirm) || (*state == StateRestore) || (*state == StateLoadoutRestore)) {
+            if ((state == StateConfirm) || (state == StateRestore) || (state == StateLoadoutRestore)) {
                 ImGui::Dummy(ImVec2(0.0f, 5.0f));
                 ImGui::Text("You must reboot your device for the changes to take effect.");
             }
-            else if (*state == StateWarning) {
+            else if (state == StateWarning) {
                 ImGui::Dummy(ImVec2(0.0f, 5.0f));
                 ImGui::Text("Do you still wish to continue restoring this loadout?");
             }
@@ -139,34 +151,34 @@ namespace GUI {
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
             if (ImGui::Button("Ok", ImVec2(120, 0))) {
-                switch (*state) {
+                switch (state) {
                     case StateConfirm:
                         AppList::Backup();
                         backupExists = true;
                         if ((AppList::Save(entries)) == 0)
-                            *state = StateDone;
+                            state = StateDone;
                         else
-                            *state = StateError;
+                            state = StateError;
                         break;
 
                     case StateRestore:
                         AppList::Restore();
-                        *state = StateDone;
+                        state = StateDone;
                         break;
 
                     case StateLoadoutRestore:
-                        if (AppList::Compare(name)) {
-                            *state = StateWarning;
+                        if (AppList::Compare(db_name)) {
+                            state = StateWarning;
                         }
                         else {
-                            Loadouts::Restore(name);
-                            *state = StateDone;
+                            Loadouts::Restore(db_name);
+                            state = StateDone;
                         }
                         break;
 
                     case StateWarning:
-                        Loadouts::Restore(name);
-                        *state = StateDone;
+                        Loadouts::Restore(db_name);
+                        state = StateDone;
                         break;
 
                     case StateDone:
@@ -174,7 +186,7 @@ namespace GUI {
                         break;
 
                     case StateError:
-                        *state = StateNone;
+                        state = StateNone;
                         break;
 
                     default:
@@ -188,13 +200,241 @@ namespace GUI {
 
             if (ImGui::Button("Cancel", ImVec2(120, 0))) {
                 ImGui::CloseCurrentPopup();
-                *state = StateNone;
+                state = StateNone;
             }
 
             ImGui::EndPopup();
         }
 
         ImGui::PopStyleVar();
+    }
+
+    static void SortTab(AppEntries &entries, SortBy &sort, State &state) {
+        int ret = 0;
+        ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter |
+            ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY;
+        
+        if (ImGui::BeginTabItem("Sort/Backup")) {
+            ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
+            
+            ImGui::SetNextItemWidth(100.0f);
+            if (ImGui::Combo("Sort by", &sort_mode, "Title\0Title ID\0")) {
+                sort = SortDefault;
+                ret = AppList::Get(entries);
+            }
+            
+            ImGui::SameLine();
+            
+            if (ImGui::RadioButton("Default", sort == SortDefault)) {
+                sort = SortDefault;
+                ret = AppList::Get(entries);
+            }
+            
+            ImGui::SameLine();
+            
+            if (ImGui::RadioButton("Asc", sort == SortAsc)) {
+                sort = SortAsc;
+                ret = AppList::Get(entries);
+                std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAppAsc);
+                std::sort(entries.child_apps.begin(), entries.child_apps.end(), AppList::SortChildAppAsc);
+                AppList::Sort(entries);
+            }
+            
+            ImGui::SameLine();
+            
+            if (ImGui::RadioButton("Desc", sort == SortDesc)) {
+                sort = SortDesc;
+                ret = AppList::Get(entries);
+                std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAppDesc);
+                std::sort(entries.child_apps.begin(), entries.child_apps.end(), AppList::SortChildAppDesc);
+                AppList::Sort(entries);
+            }
+            
+            ImGui::SameLine();
+            
+            GUI::DisableButtonInit(sort == SortDefault);
+            if (ImGui::Button("Apply Sort"))
+                state = StateConfirm;
+            GUI::DisableButtonExit(sort == SortDefault);
+            
+            if (backupExists) {
+                ImGui::SameLine();
+                
+                if (ImGui::Button("Restore Backup"))
+                    state = StateRestore;
+            }
+            
+            ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
+            
+            if (ImGui::BeginTable("AppList", 5, tableFlags)) {
+                ImGui::TableSetupColumn("");
+                ImGui::TableSetupColumn("Title");
+                ImGui::TableSetupColumn("Page ID");
+                ImGui::TableSetupColumn("Page No");
+                ImGui::TableSetupColumn("Pos");
+                ImGui::TableHeadersRow();
+                
+                for (int i = 0, counter = 0; i < entries.icons.size(); i++) {
+                    if (entries.icons[i].folder) {
+                        ImGui::TableNextRow();
+                        
+                        ImGui::TableNextColumn();
+                        ImGui::Image(reinterpret_cast<ImTextureID>(icons[Folder].id), ImVec2(20, 20));
+                        
+                        ImGui::TableNextColumn();
+                        std::string title = std::to_string(counter) + ") ";
+                        title.append(entries.icons[i].title);
+                        bool open = ImGui::TreeNodeEx(title.c_str(), ImGuiTreeNodeFlags_SpanFullWidth);
+                        
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%d", entries.icons[i].pageId);
+                        
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%d", entries.icons[i].pageNo);
+                        
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%d", entries.icons[i].pos);
+                        
+                        if (open) {
+                            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanFullWidth;
+                            int reserved01 = std::stoi(std::string(entries.icons[i].reserved01));
+                            
+                            for (int j = 0; j < entries.child_apps.size(); j++) {
+                                if (entries.child_apps[j].pageNo == reserved01) {
+                                    ImGui::TableNextRow();
+                                    ImGui::TableNextColumn();
+                                    
+                                    ImGui::TableNextColumn();
+                                    ImGui::TreeNodeEx(entries.child_apps[j].title, flags);
+                                    
+                                    ImGui::TableNextColumn();
+                                    ImGui::Text("%d", entries.child_apps[j].pageId);
+                                    
+                                    ImGui::TableNextColumn();
+                                    ImGui::Text("-");
+                                    
+                                    ImGui::TableNextColumn();
+                                    ImGui::Text("%d", entries.child_apps[j].pos);
+                                }
+                            }
+                            
+                            ImGui::TreePop();
+                        }
+
+                        counter++;
+                    }
+                    else if (entries.icons[i].pageNo >= 0) {
+                        ImGui::TableNextRow();
+                        
+                        ImGui::TableNextColumn();
+                        ImGui::Image(reinterpret_cast<ImTextureID>(icons[App].id), ImVec2(20, 20));
+                        
+                        ImGui::TableNextColumn();
+                        std::string title = std::to_string(counter) + ") ";
+                        title.append(entries.icons[i].title);
+                        ImGui::Selectable(title.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
+                        
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%d", entries.icons[i].pageId);
+                        
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%d", entries.icons[i].pageNo);
+                        
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%d", entries.icons[i].pos);
+                        
+                        counter++;
+                    }
+                }
+                
+                ImGui::EndTable();
+            }
+            
+            ImGui::EndTabItem();
+        }
+    }
+
+    static void LoadoutsTab(std::vector<SceIoDirent> &loadouts, State &state, int &date_format, std::string &loadout_name) {
+        ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter |
+            ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY;
+
+        if (ImGui::BeginTabItem("Loadouts")) {
+            ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
+            
+            if (ImGui::Button("Backup current loadout")) {
+                if (R_SUCCEEDED(Loadouts::Backup()))
+                FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
+            }
+            
+            ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
+            
+            if (ImGui::BeginTable("LoadoutList", 3, tableFlags)) {
+                if (loadouts.empty())
+                    ImGui::Text("No loadouts found");
+                else {
+                    ImGui::TableSetupColumn("");
+                    ImGui::TableSetupColumn("Title");
+                    ImGui::TableSetupColumn("Date");
+                    ImGui::TableHeadersRow();
+                    
+                    for (int i = 0; i < loadouts.size(); i++) {
+                        ImGui::TableNextRow();
+                        
+                        ImGui::TableNextColumn();
+                        ImGui::Image(reinterpret_cast<ImTextureID>(icons[DB].id), ImVec2(20, 20));
+                        
+                        ImGui::TableNextColumn();
+                        if (ImGui::Selectable(loadouts[i].d_name, false, ImGuiSelectableFlags_SpanAllColumns)) {
+                            loadout_name = loadouts[i].d_name;
+                            state = StateLoadoutRestore;
+                        }
+                        
+                        ImGui::TableNextColumn();
+                        char date[16];
+                        Utils::GetDateString(date, static_cast<SceSystemParamDateFormat>(date_format), loadouts[i].d_stat.st_mtime);
+                        ImGui::Text(date);
+                    }
+                }
+                
+                ImGui::EndTable();
+            }
+            
+            ImGui::EndTabItem();
+        }
+    }
+
+    static void AboutTab(void) {
+        if (ImGui::BeginTabItem("About")) {
+            ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
+            
+            ImGui::Indent(5.f);
+            ImGui::TextColored(ImVec4(0.70f, 0.16f, 0.31f, 1.0f), "App Info:");
+            ImGui::Indent(15.f);
+            std::string version = APP_VERSION;
+            version.erase(0, std::min(version.find_first_not_of('0'), version.size() - 1));
+            ImGui::Text("App version: %s", version.c_str());
+            ImGui::Text("Author: Joel16");
+            ImGui::Text("Assets: PreetiSketch");
+            ImGui::Text("Dear imGui version: %s", ImGui::GetVersion());
+            ImGui::Text("SQLite 3 version: %s", sqlite3_libversion());
+            
+            ImGui::Dummy(ImVec2(0.0f, 10.0f)); // Spacing
+            ImGui::Unindent();
+            
+            ImGui::Indent(5.f);
+            ImGui::TextColored(ImVec4(0.70f, 0.16f, 0.31f, 1.0f), "Usage:");
+            ImGui::Indent(15.f);
+            std::string usage = std::string("VITA Homebrew Sorter is a basic PS VITA homebrew application that sorts the application database in your LiveArea.")
+                + " The application sorts apps and games that are inside folders as well. This applications also allows you to backup your current 'loadout' that "
+                + " you can switch into as you wish. A backup will be made before any changes are applied to the application database."
+                + " This backup is overwritten each time you use the sort option. You can find the backup in ux0:/data/VITAHomebrewSorter/backups/app.db."
+                + " \n\nIt is always recommended to restart your vita so that it can refresh your livearea/app.db for any changes (deleted icons, new folders, etc.)"
+                + " before you run this application.";
+            ImGui::TextWrapped(usage.c_str());
+            ImGui::Unindent();
+            
+            ImGui::EndTabItem();
+        }
     }
 
     int RenderLoop(void) {
@@ -207,23 +447,8 @@ namespace GUI {
         int date_format = Utils::GetDateFormat();
         std::string loadout_name;
         
-        enum SortBy {
-            SortDefault,
-            SortAsc,
-            SortDesc
-        };
-
-        enum IconType {
-            App,
-            DB,
-            Folder
-        };
-        
         SortBy sort = SortDefault;
         State state = StateNone;
-
-        ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter |
-            ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY;
         
         while (!done) {
             ImGui_ImplVitaGL_NewFrame();
@@ -231,226 +456,15 @@ namespace GUI {
 
             if (ImGui::Begin("VITA Homebrew Sorter", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
                 if (ImGui::BeginTabBar("VITA Homebrew Sorter tabs", ImGuiTabBarFlags_None)) {
-                    if (ImGui::BeginTabItem("Sort/Backup")) {
-                        ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-
-                        ImGui::SetNextItemWidth(100.0f);
-                        if (ImGui::Combo("Sort by", &sort_mode, "Title\0Title ID\0")) {
-                            sort = SortDefault;
-                            ret = AppList::Get(entries);
-                        }
-                        
-                        ImGui::SameLine();
-
-                        if (ImGui::RadioButton("Default", sort == SortDefault)) {
-                            sort = SortDefault;
-                            ret = AppList::Get(entries);
-                        }
-                        
-                        ImGui::SameLine();
-                        
-                        if (ImGui::RadioButton("Asc", sort == SortAsc)) {
-                            sort = SortAsc;
-                            ret = AppList::Get(entries);
-                            std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAppAsc);
-                            std::sort(entries.child_apps.begin(), entries.child_apps.end(), AppList::SortChildAppAsc);
-                            AppList::Sort(entries);
-                        }
-                        
-                        ImGui::SameLine();
-                        
-                        if (ImGui::RadioButton("Desc", sort == SortDesc)) {
-                            sort = SortDesc;
-                            ret = AppList::Get(entries);
-                            std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAppDesc);
-                            std::sort(entries.child_apps.begin(), entries.child_apps.end(), AppList::SortChildAppDesc);
-                            AppList::Sort(entries);
-                        }
-                        
-                        ImGui::SameLine();
-                        
-                        DisableButtonInit(sort == SortDefault);
-                        if (ImGui::Button("Apply Sort"))
-                            state = StateConfirm;
-                        DisableButtonExit(sort == SortDefault);
-                        
-                        if (backupExists) {
-                            ImGui::SameLine();
-                            
-                            if (ImGui::Button("Restore Backup"))
-                                state = StateRestore;
-                        }
-                        
-                        ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-                        
-                        if (ImGui::BeginTable("AppList", 5, tableFlags)) {
-                            ImGui::TableSetupColumn("");
-                            ImGui::TableSetupColumn("Title");
-                            ImGui::TableSetupColumn("Page ID");
-                            ImGui::TableSetupColumn("Page No");
-                            ImGui::TableSetupColumn("Pos");
-                            ImGui::TableHeadersRow();
-                            
-                            for (int i = 0, counter = 0; i < entries.icons.size(); i++) {
-                                if (entries.icons[i].folder) {
-                                    ImGui::TableNextRow();
-
-                                    ImGui::TableNextColumn();
-                                    ImGui::Image(reinterpret_cast<ImTextureID>(icons[Folder].id), ImVec2(20, 20));
-
-                                    ImGui::TableNextColumn();
-                                    std::string title = std::to_string(counter) + ") ";
-                                    title.append(entries.icons[i].title);
-                                    bool open = ImGui::TreeNodeEx(title.c_str(), ImGuiTreeNodeFlags_SpanFullWidth);
-                                    
-                                    ImGui::TableNextColumn();
-                                    ImGui::Text("%d", entries.icons[i].pageId);
-                                    
-                                    ImGui::TableNextColumn();
-                                    ImGui::Text("%d", entries.icons[i].pageNo);
-                                        
-                                    ImGui::TableNextColumn();
-                                    ImGui::Text("%d", entries.icons[i].pos);
-
-                                    if (open) {
-                                        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanFullWidth;
-                                        int reserved01 = std::stoi(std::string(entries.icons[i].reserved01));
-
-                                        for (int j = 0; j < entries.child_apps.size(); j++) {
-                                            if (entries.child_apps[j].pageNo == reserved01) {
-                                                ImGui::TableNextRow();
-                                                ImGui::TableNextColumn();
-                                                //ImGui::Image(reinterpret_cast<ImTextureID>(icons[App].id), ImVec2(20, 20));
-
-                                                ImGui::TableNextColumn();
-                                                ImGui::TreeNodeEx(entries.child_apps[j].title, flags);
-
-                                                ImGui::TableNextColumn();
-                                                ImGui::Text("%d", entries.child_apps[j].pageId);
-                                                
-                                                ImGui::TableNextColumn();
-                                                ImGui::Text("-");
-                                                
-                                                ImGui::TableNextColumn();
-                                                ImGui::Text("%d", entries.child_apps[j].pos);
-                                            }
-                                        }
-                                        ImGui::TreePop();
-                                    }
-
-                                    counter++;
-                                }
-                                else if (entries.icons[i].pageNo >= 0) {
-                                    ImGui::TableNextRow();
-                                    
-                                    ImGui::TableNextColumn();
-                                    ImGui::Image(reinterpret_cast<ImTextureID>(icons[App].id), ImVec2(20, 20));
-
-                                    ImGui::TableNextColumn();
-                                    std::string title = std::to_string(counter) + ") ";
-                                    title.append(entries.icons[i].title);
-                                    ImGui::Selectable(title.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
-                                    
-                                    ImGui::TableNextColumn();
-                                    ImGui::Text("%d", entries.icons[i].pageId);
-                                    
-                                    ImGui::TableNextColumn();
-                                    ImGui::Text("%d", entries.icons[i].pageNo);
-                                        
-                                    ImGui::TableNextColumn();
-                                    ImGui::Text("%d", entries.icons[i].pos);
-
-                                    counter++;
-                                }
-                            }
-                            
-                            ImGui::EndTable();
-                        }
-
-                        ImGui::EndTabItem();
-                    }
-                    if (ImGui::BeginTabItem("Loadouts")) {
-                        ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-
-                        if (ImGui::Button("Backup current loadout")) {
-                            if (R_SUCCEEDED(Loadouts::Backup()))
-                                FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
-                        }
-
-                        ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-                        
-                        if (ImGui::BeginTable("LoadoutList", 3, tableFlags)) {
-                            if (loadouts.empty()) {
-                                ImGui::Text("No loadouts found");
-                            }
-                            else {
-                                ImGui::TableSetupColumn("");
-                                ImGui::TableSetupColumn("Title");
-                                ImGui::TableSetupColumn("Date");
-                                ImGui::TableHeadersRow();
-
-                                for (int i = 0; i < loadouts.size(); i++) {
-                                    ImGui::TableNextRow();
-                                    
-                                    ImGui::TableNextColumn();
-                                    ImGui::Image(reinterpret_cast<ImTextureID>(icons[DB].id), ImVec2(20, 20));
-                                    
-                                    ImGui::TableNextColumn();
-                                    if (ImGui::Selectable(loadouts[i].d_name, false, ImGuiSelectableFlags_SpanAllColumns)) {
-                                        loadout_name = loadouts[i].d_name;
-                                        state = StateLoadoutRestore;
-                                    }
-
-                                    ImGui::TableNextColumn();
-                                    char date[16];
-                                    Utils::GetDateString(date, static_cast<SceSystemParamDateFormat>(date_format), loadouts[i].d_stat.st_mtime);
-                                    ImGui::Text(date);
-                                }
-                            }
-
-                            ImGui::EndTable();
-                        }
-                        
-                        ImGui::EndTabItem();
-                    }
-                    if (ImGui::BeginTabItem("About")) {
-                        ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-
-                        ImGui::Indent(5.f);
-                        ImGui::TextColored(ImVec4(0.70f, 0.16f, 0.31f, 1.0f), "App Info:");
-                        ImGui::Indent(15.f);
-                        std::string version = APP_VERSION;
-                        version.erase(0, std::min(version.find_first_not_of('0'), version.size() - 1));
-                        ImGui::Text("App version: %s", version.c_str());
-                        ImGui::Text("Author: Joel16");
-                        ImGui::Text("Assets: PreetiSketch");
-                        ImGui::Text("Dear imGui version: %s", ImGui::GetVersion());
-                        ImGui::Text("SQLite 3 version: %s", sqlite3_libversion());
-
-                        ImGui::Dummy(ImVec2(0.0f, 10.0f)); // Spacing
-                        ImGui::Unindent();
-
-                        ImGui::Indent(5.f);
-                        ImGui::TextColored(ImVec4(0.70f, 0.16f, 0.31f, 1.0f), "Usage:");
-                        ImGui::Indent(15.f);
-                        std::string usage = std::string("VITA Homebrew Sorter is a basic PS VITA homebrew application that sorts the application database in your LiveArea.")
-                            + " The application sorts apps and games that are inside folders as well. This applications also allows you to backup your current 'loadout' that "
-                            + " you can switch into as you wish. A backup will be made before any changes are applied to the application database."
-                            + " This backup is overwritten each time you use the sort option. You can find the backup in ux0:/data/VITAHomebrewSorter/backups/app.db."
-                            + " \n\nIt is always recommended to restart your vita so that it can refresh your livearea/app.db for any changes (deleted icons, new folders, etc.)"
-                            + " before you run this application.";
-                        ImGui::TextWrapped(usage.c_str());
-                        ImGui::Unindent();
-                        
-                        ImGui::EndTabItem();
-                    }
-
+                    GUI::SortTab(entries, sort, state);
+                    GUI::LoadoutsTab(loadouts, state, date_format, loadout_name);
+                    GUI::AboutTab();
                     ImGui::EndTabBar();
                 }
             }
 
             GUI::ExitWindow();
-            GUI::Prompt(&state, entries.icons, loadout_name.c_str());
+            GUI::Prompt(state, entries.icons, loadout_name.c_str());
             Renderer::End(true, ImVec4(0.45f, 0.55f, 0.60f, 1.00f));
         }
 

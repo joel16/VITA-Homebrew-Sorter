@@ -292,7 +292,7 @@ namespace AppList {
         return 0;
     }
 
-    bool Compare(const char *db_name) {
+    bool Compare(const std::string &db_name) {
         std::vector<std::string> app_entries;
         std::vector<std::string> loadout_entries;
         std::vector<std::string> diff_entries;
@@ -322,7 +322,7 @@ namespace AppList {
         sqlite3_finalize(stmt);
         sqlite3_close(db);
 
-        std::string db_path = "ux0:data/VITAHomebrewSorter/loadouts/" + std::string(db_name);
+        std::string db_path = "ux0:data/VITAHomebrewSorter/loadouts/" + db_name;
         ret = sqlite3_open_v2(db_path.c_str(), &db, SQLITE_OPEN_READWRITE, nullptr);
 
         if (ret)

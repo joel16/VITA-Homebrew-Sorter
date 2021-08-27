@@ -53,7 +53,7 @@ namespace AppList {
     void Sort(AppEntries &entries);
     int Backup(void);
     int Restore(void);
-    bool Compare(const char *db_name);
+    bool Compare(const std::string &db_name);
 }
 
 #endif
