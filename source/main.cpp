@@ -4,6 +4,7 @@
 
 #include "gui.h"
 #include "log.h"
+#include "power.h"
 #include "sqlite.h"
 #include "textures.h"
 #include "utils.h"
@@ -89,6 +90,8 @@ namespace Services {
 		
 		Log::Init();
 		Textures::Init();
+
+		Power::InitThread();
 	}
 
 	void Exit(void) {

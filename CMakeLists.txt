@@ -46,6 +46,7 @@ add_executable(${PROJECT_NAME}
   source/loadouts.cpp
   source/log.cpp
   source/main.cpp
+  source/power.cpp
   source/sqlite.cpp
   source/textures.cpp
   source/utils.cpp
@@ -70,6 +71,7 @@ target_link_libraries(${PROJECT_NAME}
   SceLibKernel_stub
   ScePower_stub
   SceShaccCg_stub
+  SceShellSvc_stub
   SceSqlite_stub
   SceSysmodule_stub
   SceTouch_stub

@@ -7,6 +7,7 @@
 #include "fs.h"
 #include "log.h"
 #include "sqlite3.h"
+#include "power.h"
 #include "utils.h"
 
 namespace AppList {
@@ -114,6 +115,9 @@ namespace AppList {
             return ret;
         }
 
+        // Lock power and prevent auto suspend.
+        Power::Lock();
+
         // Hacky workaround to avoid SQL's unique constraints. Please look away!
         for (int i = 0, counter = 10; i < entries.size(); i++, counter++) {
             std::string title = entries[i].title;
@@ -141,6 +145,7 @@ namespace AppList {
                 Log::Error("sqlite3_exec1 error %s\n", query.c_str());
                 sqlite3_close(db);
                 FS::RemoveFile(path_edit);
+                Power::Unlock();
                 return ret;
             }
         }
@@ -171,10 +176,12 @@ namespace AppList {
                 Log::Error("sqlite3_exec2 error %s\n", query.c_str());
                 sqlite3_close(db);
                 FS::RemoveFile(path_edit);
+                Power::Unlock();
                 return ret;
             }
         }
 
+        Power::Unlock();
         sqlite3_close(db);
 
         if (R_FAILED(ret = FS::CopyFile(path_edit, path)))
