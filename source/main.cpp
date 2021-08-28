@@ -2,6 +2,7 @@
 #include <imgui_vita.h>
 #include <vitaGL.h>
 
+#include "fs.h"
 #include "gui.h"
 #include "log.h"
 #include "power.h"
@@ -87,6 +88,12 @@ namespace Services {
 		
 		sceSysmoduleLoadModule(SCE_SYSMODULE_SQLITE);
 		SQLite::Init();
+
+		if (!FS::DirExists("ux0:data/VITAHomebrewSorter/backup"))
+			FS::MakeDir("ux0:data/VITAHomebrewSorter/backup");
+
+		if (!FS::DirExists("ux0:data/VITAHomebrewSorter/loadouts"))
+			FS::MakeDir("ux0:data/VITAHomebrewSorter/loadouts");
 		
 		Log::Init();
 		Textures::Init();

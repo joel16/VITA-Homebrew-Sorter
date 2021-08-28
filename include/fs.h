@@ -10,6 +10,7 @@ namespace FS {
     bool FileExists(const std::string &path);
     bool DirExists(const std::string &path);
     int CreateFile(const std::string &path);
+    int MakeDir(const std::string &path);
     int RemoveFile(const std::string &path);
     int CopyFile(const std::string &src_path, const std::string &dest_path);
     int GetDirList(const std::string &path, std::vector<SceIoDirent> &entries);

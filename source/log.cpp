@@ -11,15 +11,6 @@ namespace Log {
     static SceUID log_file = 0;
 
     void Init(void) {
-        if (!FS::DirExists("ux0:data"))
-            sceIoMkdir("ux0:data", 0777);
-        if (!FS::DirExists("ux0:data/VITAHomebrewSorter"))
-            sceIoMkdir("ux0:data/VITAHomebrewSorter", 0777);
-        if (!FS::DirExists("ux0:data/VITAHomebrewSorter/backup"))
-            sceIoMkdir("ux0:data/VITAHomebrewSorter/backup", 0777);
-        if (!FS::DirExists("ux0:data/VITAHomebrewSorter/loadouts"))
-            sceIoMkdir("ux0:data/VITAHomebrewSorter/loadouts", 0777);
-
         if (!FS::FileExists("ux0:data/VITAHomebrewSorter/debug.log"))
             FS::CreateFile("ux0:data/VITAHomebrewSorter/debug.log");
             

@@ -50,6 +50,26 @@ namespace FS {
         return 0;
     }
 
+    // Recursive mkdir based on -> https://newbedev.com/mkdir-c-function
+    int MakeDir(const std::string &path) {
+        std::string current_level = "";
+        std::string level;
+        std::stringstream ss(path);
+        
+        // split path using slash as a separator
+        while (std::getline(ss, level, '/')) {
+            current_level += level; // append folder to the current level
+            
+            // create current level
+            if (!FS::DirExists(current_level) && sceIoMkdir(current_level.c_str(), 0777) != 0)
+                return -1;
+                
+            current_level += "/"; // don't forget to append a slash
+        }
+        
+        return 0;
+    }
+
     static int GetFileSize(const std::string &path, SceOff &size) {
         SceIoStat stat;
         int ret = 0;
