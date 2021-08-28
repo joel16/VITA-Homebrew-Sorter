@@ -1,5 +1,4 @@
 #include <psp2/kernel/processmgr.h>
-#include <psp2/shellutil.h>
 
 #include "log.h"
 #include "utils.h"
@@ -26,16 +25,10 @@ namespace Power {
     }
     
     void Lock(void) {
-        if (!lock_power)
-            sceShellUtilLock(SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
-            
         lock_power = true;
     }
     
     void Unlock(void) {
-        if (lock_power)
-            sceShellUtilUnlock(SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
-            
         lock_power = false;
     }
 }
