@@ -8,6 +8,7 @@
 #include "utils.h"
 
 int SCE_CTRL_ENTER, SCE_CTRL_CANCEL;
+unsigned int pressed;
 
 namespace Utils {
     static SceCtrlData pad, old_pad;
@@ -55,6 +56,14 @@ namespace Utils {
         }
         
         return 0;
+    }
+    
+    SceCtrlData ReadControls(void) {
+        sceClibMemset(&pad, 0, sizeof(SceCtrlData));
+        sceCtrlPeekBufferPositive(0, &pad, 1);
+        pressed = pad.buttons & ~old_pad.buttons;
+        old_pad = pad;
+        return pad;
     }
 
     int GetEnterButton(void) {

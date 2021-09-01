@@ -119,7 +119,7 @@ namespace AppList {
         Power::Lock();
 
         // Hacky workaround to avoid SQL's unique constraints. Please look away!
-        for (int i = 0, counter = 10; i < entries.size(); i++, counter++) {
+        for (unsigned int i = 0, counter = 10; i < entries.size(); i++, counter++) {
             std::string title = entries[i].title;
             std::string titleId = entries[i].titleId;
             std::string reserved01 = entries[i].reserved01;
@@ -150,7 +150,7 @@ namespace AppList {
             }
         }
 
-        for (int i = 0; i < entries.size(); i++) {
+        for (unsigned int i = 0; i < entries.size(); i++) {
             std::string title = entries[i].title;
             std::string titleId = entries[i].titleId;
             std::string reserved01 = entries[i].reserved01;
@@ -245,7 +245,7 @@ namespace AppList {
 
     void Sort(AppEntries &entries) {
         int pos = 0, pageCounter = 0;
-        for (int i = 0; i < entries.icons.size(); i ++) {
+        for (unsigned int i = 0; i < entries.icons.size(); i ++) {
             // Reset position
             if (pos > 9) {
                 pos = 0;
@@ -254,7 +254,7 @@ namespace AppList {
             
             // App/Game belongs to a folder
             if (entries.icons[i].pageNo < 0) {
-                for (int j = 0; j < entries.folders.size(); j++) {
+                for (unsigned int j = 0; j < entries.folders.size(); j++) {
                     if (entries.icons[i].pageId == entries.folders[j].pageId) {
                         entries.icons[i].pos = entries.folders[j].index;
                         entries.folders[j].index++;

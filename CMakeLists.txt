@@ -13,12 +13,11 @@ include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 set(VITA_APP_NAME "VITA Homebrew Sorter")
 set(VITA_TITLEID "VITAHBSRT")
-set(VITA_VERSION "01.23")
+set(VITA_VERSION "01.24")
 
 add_definitions(-DAPP_VERSION="${VITA_VERSION}")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -g -mtune=cortex-a9 -mfpu=neon -Wall")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi -fno-exceptions -fno-rtti -std=gnu++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -mtune=cortex-a9 -mfpu=neon -Wall -Wno-psabi -std=gnu++17")
 set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d PARENTAL_LEVEL=1")
 
 include_directories(

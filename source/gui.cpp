@@ -61,7 +61,7 @@ namespace GUI {
 
     static void SetupPopup(const char *id) {
         ImGui::OpenPopup(id);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, tex_size);
         ImGui::SetNextWindowPos(ImVec2(480.0f, 272.0f), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     };
     
@@ -141,9 +141,7 @@ namespace GUI {
                 break;
         }
 
-        ImGui::OpenPopup(title.c_str());
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, tex_size);
-        ImGui::SetNextWindowPos(ImVec2(480.0f, 272.0f), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        GUI::SetupPopup(title.c_str());
         
         if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text(prompt.c_str());
@@ -217,15 +215,12 @@ namespace GUI {
                 ImGui::CloseCurrentPopup();
                 state = StateNone;
             }
-
-            ImGui::EndPopup();
         }
 
-        ImGui::PopStyleVar();
+        GUI::ExitPopup();
     }
 
     static void SortTab(AppEntries &entries, SortBy &sort, State &state) {
-        int ret = 0;
         ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter |
             ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY;
         
@@ -235,21 +230,21 @@ namespace GUI {
             ImGui::SetNextItemWidth(100.0f);
             if (ImGui::Combo("Sort by", &sort_mode, "Title\0Title ID\0")) {
                 sort = SortDefault;
-                ret = AppList::Get(entries);
+                AppList::Get(entries);
             }
             
             ImGui::SameLine();
             
             if (ImGui::RadioButton("Default", sort == SortDefault)) {
                 sort = SortDefault;
-                ret = AppList::Get(entries);
+                AppList::Get(entries);
             }
             
             ImGui::SameLine();
             
             if (ImGui::RadioButton("Asc", sort == SortAsc)) {
                 sort = SortAsc;
-                ret = AppList::Get(entries);
+                AppList::Get(entries);
                 std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAppAsc);
                 std::sort(entries.child_apps.begin(), entries.child_apps.end(), AppList::SortChildAppAsc);
                 AppList::Sort(entries);
@@ -259,7 +254,7 @@ namespace GUI {
             
             if (ImGui::RadioButton("Desc", sort == SortDesc)) {
                 sort = SortDesc;
-                ret = AppList::Get(entries);
+                AppList::Get(entries);
                 std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAppDesc);
                 std::sort(entries.child_apps.begin(), entries.child_apps.end(), AppList::SortChildAppDesc);
                 AppList::Sort(entries);
@@ -289,7 +284,7 @@ namespace GUI {
                 ImGui::TableSetupColumn("Pos", ImGuiTableColumnFlags_WidthFixed);
                 ImGui::TableHeadersRow();
                 
-                for (int i = 0, counter = 0; i < entries.icons.size(); i++) {
+                for (unsigned int i = 0, counter = 0; i < entries.icons.size(); i++) {
                     if (entries.icons[i].folder) {
                         ImGui::TableNextRow();
                         
@@ -314,7 +309,7 @@ namespace GUI {
                             ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanFullWidth;
                             int reserved01 = std::stoi(std::string(entries.icons[i].reserved01));
                             
-                            for (int j = 0; j < entries.child_apps.size(); j++) {
+                            for (unsigned int j = 0; j < entries.child_apps.size(); j++) {
                                 if (entries.child_apps[j].pageNo == reserved01) {
                                     ImGui::TableNextRow();
                                     ImGui::TableNextColumn();
@@ -393,7 +388,7 @@ namespace GUI {
                     ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
                     ImGui::TableHeadersRow();
                     
-                    for (int i = 0; i < loadouts.size(); i++) {
+                    for (unsigned int i = 0; i < loadouts.size(); i++) {
                         ImGui::TableNextRow();
                         
                         ImGui::TableNextColumn();
@@ -466,20 +461,22 @@ namespace GUI {
         backupExists = (FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db") || FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db.bkp"));
         AppEntries entries;
         std::vector<SceIoDirent> loadouts;
-        int ret = AppList::Get(entries);
-        ret = FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
+        AppList::Get(entries);
+        FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
         int date_format = Utils::GetDateFormat();
         std::string loadout_name;
         
         SortBy sort = SortDefault;
         State state = StateNone;
+
+        SceCtrlData pad = { 0 };
         
         while (!done) {
             ImGui_ImplVitaGL_NewFrame();
             GUI::SetupWindow();
 
             if (ImGui::Begin("VITA Homebrew Sorter", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
-                if (ImGui::BeginTabBar("VITA Homebrew Sorter tabs", ImGuiTabBarFlags_None)) {
+                if (ImGui::BeginTabBar("VITA Homebrew Sorter tabs")) {
                     GUI::SortTab(entries, sort, state);
                     GUI::LoadoutsTab(loadouts, state, date_format, loadout_name);
                     GUI::AboutTab();
@@ -490,6 +487,11 @@ namespace GUI {
             GUI::ExitWindow();
             GUI::Prompt(state, entries.icons, loadouts, loadout_name.c_str());
             Renderer::End(true, ImVec4(0.45f, 0.55f, 0.60f, 1.00f));
+
+            pad = Utils::ReadControls();
+
+            if (pressed & SCE_CTRL_START)
+                done = true;
         }
 
         return 0;
