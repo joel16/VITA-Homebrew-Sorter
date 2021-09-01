@@ -4,6 +4,7 @@
 namespace Loadouts {
     int Backup(void);
     int Restore(const std::string &db_name);
+    int Delete(const std::string &db_name);
 }
 
 #endif

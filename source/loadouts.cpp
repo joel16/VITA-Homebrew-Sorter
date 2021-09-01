@@ -29,4 +29,14 @@ namespace Loadouts {
         
         return 0;
     }
+
+    int Delete(const std::string &db_name) {
+        int ret = 0;
+        std::string loadout_path = "ux0:data/VITAHomebrewSorter/loadouts/" + db_name;
+
+        if (R_FAILED(ret = FS::RemoveFile(loadout_path)))
+            return ret;
+        
+        return 0;
+    }
 }

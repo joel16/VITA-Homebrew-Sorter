@@ -9,17 +9,19 @@
 std::vector<Tex> icons;
 
 namespace Textures {
-    static bool LoadImage(unsigned char *data, GLint format, Tex *texture, void (*free_func)(void *)) {    
+    constexpr int max_textures = 4;
+
+    static bool LoadImage(unsigned char *data, GLint format, Tex &texture, void (*free_func)(void *)) {    
         // Create a OpenGL texture identifier
-        glGenTextures(1, &texture->id);
-        glBindTexture(GL_TEXTURE_2D, texture->id);
+        glGenTextures(1, &texture.id);
+        glBindTexture(GL_TEXTURE_2D, texture.id);
         
         // Setup filtering parameters for display
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         
         // Upload pixels into texture
-        glTexImage2D(GL_TEXTURE_2D, 0, format, texture->width, texture->height, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, texture.width, texture.height, 0, format, GL_UNSIGNED_BYTE, data);
 
         if (*free_func)
             free_func(data);
@@ -27,7 +29,7 @@ namespace Textures {
         return true;
     }
 
-    static bool LoadImagePNG(const std::string &path, Tex *texture) {
+    static bool LoadImagePNG(const std::string &path, Tex &texture) {
         bool ret = false;
         png_image image;
         sceClibMemset(&image, 0, (sizeof image));
@@ -39,8 +41,8 @@ namespace Textures {
             buffer = new png_byte[PNG_IMAGE_SIZE(image)];
             
             if (buffer != nullptr && png_image_finish_read(&image, nullptr, buffer, 0, nullptr) != 0) {
-                texture->width = image.width;
-                texture->height = image.height;
+                texture.width = image.width;
+                texture.height = image.height;
                 ret = Textures::LoadImage(buffer, GL_RGBA, texture, nullptr);
                 
                 if (buffer == nullptr)
@@ -66,23 +68,26 @@ namespace Textures {
     }
 
     bool Init(void) {
-        icons.resize(3);
+        icons.resize(max_textures);
 
-        bool ret = Textures::LoadImagePNG("app0:res/app.png", &icons[0]);
-        IM_ASSERT(ret);
+        const std::string paths[max_textures] {
+            "app0:res/app.png",
+            "app0:res/db.png",
+            "app0:res/folder.png",
+            "app0:res/trash.png"
+        };
 
-        ret = Textures::LoadImagePNG("app0:res/db.png", &icons[1]);
-        IM_ASSERT(ret);
+        for (int i = 0; i < max_textures; i++) {
+            bool ret = Textures::LoadImagePNG(paths[i], icons[i]);
+            IM_ASSERT(ret);
+        }
 
-        ret = Textures::LoadImagePNG("app0:res/folder.png", &icons[2]);
-        IM_ASSERT(ret);
-        
         return 0;
     }
 
     void Exit(void) {
-        glDeleteTextures(1, &icons[2].id);
-        glDeleteTextures(1, &icons[1].id);
-        glDeleteTextures(1, &icons[0].id);
+        for (int i = 0; i < max_textures; i++) {
+            glDeleteTextures(1, &icons[i].id);
+        }
     }
 }

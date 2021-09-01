@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <imgui_vita.h>
 #include <psp2/power.h>
+#include <psp2/kernel/clib.h>
 #include <vitaGL.h>
 
 #include "applist.h"
@@ -38,6 +39,7 @@ namespace GUI {
         StateLoadoutRestore,
         StateWarning,
         StateDone,
+        StateDelete,
         StateError
     };
 
@@ -50,10 +52,12 @@ namespace GUI {
     enum IconType {
         App,
         DB,
-        Folder
+        Folder,
+        Trash
     };
 
     static bool backupExists = false;
+    static const ImVec2 tex_size = ImVec2(20, 20);
 
     static void SetupPopup(const char *id) {
         ImGui::OpenPopup(id);
@@ -91,7 +95,7 @@ namespace GUI {
         }
     }
 
-    static void Prompt(State &state, std::vector<AppInfoIcon> &entries, const std::string &db_name) {
+    static void Prompt(State &state, std::vector<AppInfoIcon> &entries, std::vector<SceIoDirent> &loadouts, const std::string &db_name) {
         if (state == StateNone)
             return;
         
@@ -123,6 +127,11 @@ namespace GUI {
                 prompt = "Do you wish to restart your device?";
                 break;
 
+            case StateDelete:
+                title = "Delete";
+                prompt = "Are you sure you want to delete this loadout?";
+                break;
+
             case StateError:
                 title = "Error";
                 prompt = "An error occured and has been logged. The app will restore your app.db backup.";
@@ -133,7 +142,7 @@ namespace GUI {
         }
 
         ImGui::OpenPopup(title.c_str());
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20, 20));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, tex_size);
         ImGui::SetNextWindowPos(ImVec2(480.0f, 272.0f), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         
         if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -183,6 +192,12 @@ namespace GUI {
 
                     case StateDone:
                         scePowerRequestColdReset();
+                        break;
+
+                    case StateDelete:
+                        Loadouts::Delete(db_name);
+                        FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
+                        state = StateNone;
                         break;
 
                     case StateError:
@@ -267,11 +282,11 @@ namespace GUI {
             ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
             
             if (ImGui::BeginTable("AppList", 5, tableFlags)) {
-                ImGui::TableSetupColumn("");
+                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
                 ImGui::TableSetupColumn("Title");
-                ImGui::TableSetupColumn("Page ID");
-                ImGui::TableSetupColumn("Page No");
-                ImGui::TableSetupColumn("Pos");
+                ImGui::TableSetupColumn("Page ID", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableSetupColumn("Page No", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableSetupColumn("Pos", ImGuiTableColumnFlags_WidthFixed);
                 ImGui::TableHeadersRow();
                 
                 for (int i = 0, counter = 0; i < entries.icons.size(); i++) {
@@ -279,7 +294,7 @@ namespace GUI {
                         ImGui::TableNextRow();
                         
                         ImGui::TableNextColumn();
-                        ImGui::Image(reinterpret_cast<ImTextureID>(icons[Folder].id), ImVec2(20, 20));
+                        ImGui::Image(reinterpret_cast<ImTextureID>(icons[Folder].id), tex_size);
                         
                         ImGui::TableNextColumn();
                         std::string title = std::to_string(counter) + ") ";
@@ -327,7 +342,7 @@ namespace GUI {
                         ImGui::TableNextRow();
                         
                         ImGui::TableNextColumn();
-                        ImGui::Image(reinterpret_cast<ImTextureID>(icons[App].id), ImVec2(20, 20));
+                        ImGui::Image(reinterpret_cast<ImTextureID>(icons[App].id), tex_size);
                         
                         ImGui::TableNextColumn();
                         std::string title = std::to_string(counter) + ") ";
@@ -368,23 +383,24 @@ namespace GUI {
             
             ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
             
-            if (ImGui::BeginTable("LoadoutList", 3, tableFlags)) {
+            if (ImGui::BeginTable("LoadoutList", 4, tableFlags)) {
                 if (loadouts.empty())
                     ImGui::Text("No loadouts found");
                 else {
-                    ImGui::TableSetupColumn("");
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
                     ImGui::TableSetupColumn("Title");
-                    ImGui::TableSetupColumn("Date");
+                    ImGui::TableSetupColumn("Date", ImGuiTableColumnFlags_WidthFixed);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
                     ImGui::TableHeadersRow();
                     
                     for (int i = 0; i < loadouts.size(); i++) {
                         ImGui::TableNextRow();
                         
                         ImGui::TableNextColumn();
-                        ImGui::Image(reinterpret_cast<ImTextureID>(icons[DB].id), ImVec2(20, 20));
+                        ImGui::Image(reinterpret_cast<ImTextureID>(icons[DB].id), tex_size);
                         
                         ImGui::TableNextColumn();
-                        if (ImGui::Selectable(loadouts[i].d_name, false, ImGuiSelectableFlags_SpanAllColumns)) {
+                        if (ImGui::Selectable(loadouts[i].d_name, false)) {
                             loadout_name = loadouts[i].d_name;
                             state = StateLoadoutRestore;
                         }
@@ -393,6 +409,14 @@ namespace GUI {
                         char date[16];
                         Utils::GetDateString(date, static_cast<SceSystemParamDateFormat>(date_format), loadouts[i].d_stat.st_mtime);
                         ImGui::Text(date);
+
+                        ImGui::TableNextColumn();
+                        ImGui::PushID(i);
+                        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(icons[Trash].id), tex_size, ImVec2(0, 0), ImVec2(1, 1), 0)) {
+                            loadout_name = loadouts[i].d_name;
+                            state = StateDelete;
+                        }
+                        ImGui::PopID();
                     }
                 }
                 
@@ -464,7 +488,7 @@ namespace GUI {
             }
 
             GUI::ExitWindow();
-            GUI::Prompt(state, entries.icons, loadout_name.c_str());
+            GUI::Prompt(state, entries.icons, loadouts, loadout_name.c_str());
             Renderer::End(true, ImVec4(0.45f, 0.55f, 0.60f, 1.00f));
         }
 

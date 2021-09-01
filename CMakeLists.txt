@@ -91,4 +91,5 @@ vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
   FILE res/app.png res/app.png
   FILE res/db.png res/db.png
   FILE res/folder.png res/folder.png
+  FILE res/trash.png res/trash.png
 )
