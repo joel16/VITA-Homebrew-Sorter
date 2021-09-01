@@ -11,10 +11,12 @@ namespace Log {
     static SceUID log_file = 0;
 
     void Init(void) {
-        if (!FS::FileExists("ux0:data/VITAHomebrewSorter/debug.log"))
-            FS::CreateFile("ux0:data/VITAHomebrewSorter/debug.log");
+        const std::string path = "ux0:data/VITAHomebrewSorter/debug.log";
+        
+        if (!FS::FileExists(path))
+            FS::CreateFile(path);
             
-        if (R_FAILED(log_file = sceIoOpen("ux0:data/VITAHomebrewSorter/debug.log", SCE_O_WRONLY | SCE_O_APPEND, 0)))
+        if (R_FAILED(log_file = sceIoOpen(path.c_str(), SCE_O_WRONLY | SCE_O_APPEND, 0)))
             return;
     }
 
