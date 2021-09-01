@@ -3,7 +3,7 @@
 A basic PS VITA homebrew application that sorts the application database in your LiveArea. The application sorts apps and games that are inside folders as well. This applications also allows you to backup your current "loadout" that you can switch into as you wish. A backup will be made before any changes are applied to the application database. This backup is overwritten each time you use the sort option. You can find the backup in `ux0:/data/VITAHomebrewSorter/backups/app.db`. 
 
 <p align="center">
-<img src="https://i.imgur.com/1MHLsKB.png" alt="VITA Homebrew Sorter Screenshot" width="640" height="362"/>
+<img src="https://i.imgur.com/cRxmwYQ.png" alt="VITA Homebrew Sorter Screenshot" width="640" height="362"/>
 </p>
 
 # Disclaimer
