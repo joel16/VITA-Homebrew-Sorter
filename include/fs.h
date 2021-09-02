@@ -13,6 +13,7 @@ namespace FS {
     int MakeDir(const std::string &path);
     int RemoveFile(const std::string &path);
     int CopyFile(const std::string &src_path, const std::string &dest_path);
+    std::string GetFileExt(const std::string &filename);
     int GetDirList(const std::string &path, std::vector<SceIoDirent> &entries);
 }
 
