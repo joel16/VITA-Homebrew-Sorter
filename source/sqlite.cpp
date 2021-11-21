@@ -175,7 +175,7 @@ namespace SQLite {
     
     static int Sync(sqlite3_file *file, int flags) {
         vfs_file *p = reinterpret_cast<vfs_file *>(file);
-        int ret = sceIoSyncByFd(*p->fd);
+        int ret = sceIoSyncByFd(*p->fd, 0);
         
         LOG("sync %x, %x => %x\n", *p->fd, flags, r);
         

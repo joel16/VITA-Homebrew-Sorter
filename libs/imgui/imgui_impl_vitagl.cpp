@@ -12,45 +12,48 @@
 #include "imgui_impl_vitagl.h"
 #include "utils.h"
 
-#define lerp(value, from_max, to_max) ((((value*10) * (to_max*10))/(from_max*10))/10)
+#define GL_COLOR_MATERIAL 0x0B57
+
+#define lerp(value, from_max, to_max) ((((value * 10) * (to_max * 10)) / (from_max * 10)) / 10)
 
 struct ImGui_ImplVitaGL_Data {
-	GLuint FontTexture;
-	uint64_t g_Time;
-	ImGui_ImplVitaGL_Data() {
+	GLuint FontTexture = 0;
+	uint64_t g_Time = 0;
+	ImGui_ImplVitaGL_Data(void) {
 		sceClibMemset(this, 0, sizeof(*this));
 	}
 };
 
 // Backend data stored in io.BackendRendererUserData to allow support for multiple Dear ImGui contexts
 // It is STRONGLY preferred that you use docking branch with multi-viewports (== single Dear ImGui context + multiple windows) instead of multiple Dear ImGui contexts.
-static ImGui_ImplVitaGL_Data* ImGui_ImplVitaGL_GetBackendData(void) {
-	return ImGui::GetCurrentContext() ? (ImGui_ImplVitaGL_Data*)ImGui::GetIO().BackendRendererUserData : nullptr;
+static ImGui_ImplVitaGL_Data *ImGui_ImplVitaGL_GetBackendData(void) {
+	return ImGui::GetCurrentContext() ? static_cast<ImGui_ImplVitaGL_Data *>(ImGui::GetIO().BackendRendererUserData) : nullptr;
 }
 
 bool ImGui_ImplVitaGL_Init(void) {
 	sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG_WIDE);
 	ImGuiIO& io = ImGui::GetIO();
-	IM_ASSERT(io.BackendRendererUserData == NULL && "Already initialized a renderer backend!");
+	IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
 	
 	// Setup backend capabilities flags
-	ImGui_ImplVitaGL_Data* bd = IM_NEW(ImGui_ImplVitaGL_Data)();
-	io.BackendRendererUserData = (void*)bd;
+	ImGui_ImplVitaGL_Data *bd = IM_NEW(ImGui_ImplVitaGL_Data)();
+	io.BackendRendererUserData = (void *)bd;
 	io.BackendRendererName = "imgui_impl_vitagl";
+	
 	return true;
 }
 
 void ImGui_ImplVitaGL_Shutdown(void) {
 	ImGuiIO& io = ImGui::GetIO();
-	ImGui_ImplVitaGL_Data* bd = ImGui_ImplVitaGL_GetBackendData();
+	ImGui_ImplVitaGL_Data *bd = ImGui_ImplVitaGL_GetBackendData();
 	
 	ImGui_ImplVitaGL_DestroyDeviceObjects();
-	io.BackendRendererName = NULL;
-	io.BackendRendererUserData = NULL;
+	io.BackendRendererName = nullptr;
+	io.BackendRendererUserData = nullptr;
 	IM_DELETE(bd);
 }
 
-static void ImGui_ImplVitaGL_UpdateGamepads() {
+static void ImGui_ImplVitaGL_UpdateGamepads(void) {
 	ImGuiIO& io = ImGui::GetIO();
 	sceClibMemset(io.NavInputs, 0, sizeof(io.NavInputs));
 	if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
@@ -89,8 +92,8 @@ static void ImGui_ImplVitaGL_UpdateGamepads() {
 }
 
 void ImGui_ImplVitaGL_NewFrame(void) {
-	ImGui_ImplVitaGL_Data* bd = ImGui_ImplVitaGL_GetBackendData();
-	IM_ASSERT(bd != NULL && "Did you call ImGui_ImplVitaGL_Init()?");
+	ImGui_ImplVitaGL_Data *bd = ImGui_ImplVitaGL_GetBackendData();
+	IM_ASSERT(bd != nullptr && "Did you call ImGui_ImplVitaGL_Init()?");
 	
 	if (!bd->FontTexture)
 		ImGui_ImplVitaGL_CreateDeviceObjects();
@@ -98,25 +101,29 @@ void ImGui_ImplVitaGL_NewFrame(void) {
 	ImGuiIO& io = ImGui::GetIO();
 	
 	// Setup display size (every frame to accommodate for window resizing)
-	int w, h;
-	int display_w, display_h;
-	GLint viewport[4]; glGetIntegerv(GL_VIEWPORT, viewport);
+	int w = 0, h = 0;
+	int display_w = 0, display_h = 0;
+	
+	GLint viewport[4];
+	glGetIntegerv(GL_VIEWPORT, viewport);
+	
 	w = display_w = viewport[2];
 	h = display_h = viewport[3];
-	io.DisplaySize = ImVec2((float)w, (float)h);
+	
+	io.DisplaySize = ImVec2(static_cast<float>(w), static_cast<float>(h));
+	
 	if (w > 0 && h > 0)
-		io.DisplayFramebufferScale = ImVec2((float)display_w / w, (float)display_h / h);
+		io.DisplayFramebufferScale = ImVec2(static_cast<float>(display_w / w),static_cast<float>(display_h) / h);
 		
 	static uint64_t frequency = 1000000;
 	uint64_t current_time = sceKernelGetProcessTimeWide();
-	io.DeltaTime = bd->g_Time > 0 ? (float)((double)(current_time - bd->g_Time) / frequency) : (float)(1.0f / 60.0f);
+	io.DeltaTime = bd->g_Time > 0 ? static_cast<float>(static_cast<double>((current_time - bd->g_Time)) / frequency) : static_cast<float>(1.0f / 60.0f);
 	bd->g_Time = current_time;
 	
 	ImGui_ImplVitaGL_UpdateGamepads();
-	ImGui::NewFrame();
 }
 
-static void ImGui_ImplVitaGL_SetupRenderState(ImDrawData* draw_data, int fb_width, int fb_height) {
+static void ImGui_ImplVitaGL_SetupRenderState(ImDrawData *draw_data, int fb_width, int fb_height) {
 	// Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled, vertex/texcoord/color pointers, polygon fill.
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -125,12 +132,12 @@ static void ImGui_ImplVitaGL_SetupRenderState(ImDrawData* draw_data, int fb_widt
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_STENCIL_TEST);
 	glDisable(GL_LIGHTING);
-	//glDisable(GL_COLOR_MATERIAL);
+	glDisable(GL_COLOR_MATERIAL);
 	glEnable(GL_SCISSOR_TEST);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
-	//glDisableClientState(GL_NORMAL_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
 	glEnable(GL_TEXTURE_2D);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glShadeModel(GL_SMOOTH);
@@ -149,7 +156,7 @@ static void ImGui_ImplVitaGL_SetupRenderState(ImDrawData* draw_data, int fb_widt
 	
 	// Setup viewport, orthographic projection matrix
 	// Our visible imgui space lies from draw_data->DisplayPos (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
-	glViewport(0, 0, (GLsizei)fb_width, (GLsizei)fb_height);
+	glViewport(0, 0, static_cast<GLsizei>(fb_width), static_cast<GLsizei>(fb_height));
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
@@ -162,10 +169,10 @@ static void ImGui_ImplVitaGL_SetupRenderState(ImDrawData* draw_data, int fb_widt
 // OpenGL2 Render function.
 // Note that this implementation is little overcomplicated because we are saving/setting up/restoring every OpenGL state explicitly.
 // This is in order to be able to run within an OpenGL engine that doesn't do so.
-void ImGui_ImplVitaGL_RenderDrawData(ImDrawData* draw_data) {
+void ImGui_ImplVitaGL_RenderDrawData(ImDrawData *draw_data) {
 	// Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
-	int fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
-	int fb_height = (int)(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
+	int fb_width = static_cast<int>(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
+	int fb_height = static_cast<int>(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
 	if (fb_width == 0 || fb_height == 0)
 		return;
 		
@@ -187,15 +194,15 @@ void ImGui_ImplVitaGL_RenderDrawData(ImDrawData* draw_data) {
 	
 	// Render command lists
 	for (int n = 0; n < draw_data->CmdListsCount; n++) {
-		const ImDrawList* cmd_list = draw_data->CmdLists[n];
-		const ImDrawVert* vtx_buffer = cmd_list->VtxBuffer.Data;
-		const ImDrawIdx* idx_buffer = cmd_list->IdxBuffer.Data;
-		glVertexPointer(2, GL_FLOAT, sizeof(ImDrawVert), (const GLvoid*)((const char*)vtx_buffer + IM_OFFSETOF(ImDrawVert, pos)));
-		glTexCoordPointer(2, GL_FLOAT, sizeof(ImDrawVert), (const GLvoid*)((const char*)vtx_buffer + IM_OFFSETOF(ImDrawVert, uv)));
-		glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(ImDrawVert), (const GLvoid*)((const char*)vtx_buffer + IM_OFFSETOF(ImDrawVert, col)));
+		const ImDrawList *cmd_list = draw_data->CmdLists[n];
+		const ImDrawVert *vtx_buffer = cmd_list->VtxBuffer.Data;
+		const ImDrawIdx *idx_buffer = cmd_list->IdxBuffer.Data;
+		glVertexPointer(2, GL_FLOAT, sizeof(ImDrawVert), reinterpret_cast<const GLvoid *>(reinterpret_cast<const char *>(vtx_buffer) + IM_OFFSETOF(ImDrawVert, pos)));
+		glTexCoordPointer(2, GL_FLOAT, sizeof(ImDrawVert), reinterpret_cast<const GLvoid *>(reinterpret_cast<const char *>(vtx_buffer) + IM_OFFSETOF(ImDrawVert, uv)));
+		glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(ImDrawVert), reinterpret_cast<const GLvoid *>(reinterpret_cast<const char *>(vtx_buffer) + IM_OFFSETOF(ImDrawVert, col)));
 		
 		for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++) {
-			const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
+			const ImDrawCmd *pcmd = &cmd_list->CmdBuffer[cmd_i];
 			if (pcmd->UserCallback) {
 				// User callback, registered via ImDrawList::AddCallback()
 				// (ImDrawCallback_ResetRenderState is a special callback value used by the user to request the renderer to reset render state.)
@@ -206,20 +213,17 @@ void ImGui_ImplVitaGL_RenderDrawData(ImDrawData* draw_data) {
 			}
 			else {
 				// Project scissor/clipping rectangles into framebuffer space
-				ImVec4 clip_rect;
-				clip_rect.x = (pcmd->ClipRect.x - clip_off.x) * clip_scale.x;
-				clip_rect.y = (pcmd->ClipRect.y - clip_off.y) * clip_scale.y;
-				clip_rect.z = (pcmd->ClipRect.z - clip_off.x) * clip_scale.x;
-				clip_rect.w = (pcmd->ClipRect.w - clip_off.y) * clip_scale.y;
-				
-				if (clip_rect.x < fb_width && clip_rect.y < fb_height && clip_rect.z >= 0.0f && clip_rect.w >= 0.0f) {
-					// Apply scissor/clipping rectangle
-					glScissor((int)clip_rect.x, (int)(fb_height - clip_rect.w), (int)(clip_rect.z - clip_rect.x), (int)(clip_rect.w - clip_rect.y));
+				ImVec2 clip_min((pcmd->ClipRect.x - clip_off.x) * clip_scale.x, (pcmd->ClipRect.y - clip_off.y) * clip_scale.y);
+				ImVec2 clip_max((pcmd->ClipRect.z - clip_off.x) * clip_scale.x, (pcmd->ClipRect.w - clip_off.y) * clip_scale.y);
+				if (clip_max.x < clip_min.x || clip_max.y < clip_min.y)
+					continue;
 					
-					// Bind texture, Draw
-					glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->GetTexID());
-					glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_BYTE, idx_buffer);
-				}
+				// Apply scissor/clipping rectangle (Y is inverted in OpenGL)
+				glScissor(static_cast<int>(clip_min.x), static_cast<int>(fb_height - clip_max.y), static_cast<int>(clip_max.x - clip_min.x), static_cast<int>(clip_max.y - clip_min.y));
+				
+				// Bind texture, Draw
+				glBindTexture(GL_TEXTURE_2D, reinterpret_cast<GLuint>(pcmd->GetTexID()));
+				glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(pcmd->ElemCount), sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, idx_buffer);
 			}
 			idx_buffer += pcmd->ElemCount;
 		}
@@ -229,15 +233,15 @@ void ImGui_ImplVitaGL_RenderDrawData(ImDrawData* draw_data) {
 	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	glDisableClientState(GL_VERTEX_ARRAY);
-	glBindTexture(GL_TEXTURE_2D, (GLuint)last_texture);
+	glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(last_texture));
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glPopAttrib();
-	glPolygonMode(GL_FRONT, (GLenum)last_polygon_mode[0]); glPolygonMode(GL_BACK, (GLenum)last_polygon_mode[1]);
-	glViewport(last_viewport[0], last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]);
-	glScissor(last_scissor_box[0], last_scissor_box[1], (GLsizei)last_scissor_box[2], (GLsizei)last_scissor_box[3]);
+	glPolygonMode(GL_FRONT, static_cast<GLenum>(last_polygon_mode[0])); glPolygonMode(GL_BACK, static_cast<GLenum>(last_polygon_mode[1]));
+	glViewport(last_viewport[0], last_viewport[1], static_cast<GLsizei>(last_viewport[2]), static_cast<GLsizei>(last_viewport[3]));
+	glScissor(last_scissor_box[0], last_scissor_box[1], static_cast<GLsizei>(last_scissor_box[2]), static_cast<GLsizei>(last_scissor_box[3]));
 	//glShadeModel(last_shade_model);
 	//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, last_tex_env_mode);
 }
@@ -245,8 +249,8 @@ void ImGui_ImplVitaGL_RenderDrawData(ImDrawData* draw_data) {
 bool ImGui_ImplVitaGL_CreateFontsTexture(void) {
 	// Build texture atlas
 	ImGuiIO& io = ImGui::GetIO();
-	ImGui_ImplVitaGL_Data* bd = ImGui_ImplVitaGL_GetBackendData();
-	unsigned char* pixels = nullptr;
+	ImGui_ImplVitaGL_Data *bd = ImGui_ImplVitaGL_GetBackendData();
+	unsigned char *pixels = nullptr;
 	int width = 0, height = 0;
 
 	ImFontConfig font_config;
@@ -268,7 +272,7 @@ bool ImGui_ImplVitaGL_CreateFontsTexture(void) {
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 	
 	// Store our identifier
-	io.Fonts->SetTexID((ImTextureID)(intptr_t)bd->FontTexture);
+	io.Fonts->SetTexID(reinterpret_cast<ImTextureID>(bd->FontTexture));
 	
 	// Restore state
 	glBindTexture(GL_TEXTURE_2D, last_texture);
@@ -277,7 +281,7 @@ bool ImGui_ImplVitaGL_CreateFontsTexture(void) {
 
 void ImGui_ImplVitaGL_DestroyFontsTexture(void) {
 	ImGuiIO& io = ImGui::GetIO();
-	ImGui_ImplVitaGL_Data* bd = ImGui_ImplVitaGL_GetBackendData();
+	ImGui_ImplVitaGL_Data *bd = ImGui_ImplVitaGL_GetBackendData();
 	
 	if (bd->FontTexture) {
 		glDeleteTextures(1, &bd->FontTexture);

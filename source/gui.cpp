@@ -473,6 +473,7 @@ namespace GUI {
         
         while (!done) {
             ImGui_ImplVitaGL_NewFrame();
+            ImGui::NewFrame();
             GUI::SetupWindow();
 
             if (ImGui::Begin("VITA Homebrew Sorter", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
