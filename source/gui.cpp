@@ -285,7 +285,7 @@ namespace GUI {
                 ImGui::TableHeadersRow();
                 
                 for (unsigned int i = 0, counter = 0; i < entries.icons.size(); i++) {
-                    if (entries.icons[i].folder) {
+                    if (entries.icons[i].icon0Type == 7) {
                         ImGui::TableNextRow();
                         
                         ImGui::TableNextColumn();

@@ -28,12 +28,12 @@ namespace AppList {
 
         std::string query = 
             std::string("SELECT info_icon.pageId, info_page.pageNo, info_icon.pos, info_icon.title, info_icon.titleId, info_icon.reserved01, ")
-            + "info_icon.reserved02, info_icon.icon0Type "
+            + "info_icon.icon0Type "
             + "FROM tbl_appinfo_icon info_icon "
             + "INNER JOIN tbl_appinfo_page info_page "
             + "ON info_icon.pageId = info_page.pageId;";
         
-        sqlite3_stmt *stmt;
+        sqlite3_stmt *stmt = nullptr;
         ret = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr);
 
         while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
@@ -45,8 +45,8 @@ namespace AppList {
             sceClibSnprintf(icon.title, 128, "%s", sqlite3_column_text(stmt, 3));
             sceClibSnprintf(icon.titleId, 16, "%s", sqlite3_column_text(stmt, 4));
             sceClibSnprintf(icon.reserved01, 16, "%s", sqlite3_column_text(stmt, 5));
-            sceClibSnprintf(icon.reserved02, 128, "%s", sqlite3_column_text(stmt, 6));
-            icon.folder = (std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7)))) == 7? true : false;
+            icon.icon0Type = std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6))); // 7 = folder
+            
             if (icon.pageNo < 0) {
                 child.pageId = icon.pageId;
                 child.pageNo = icon.pageNo;
@@ -123,21 +123,21 @@ namespace AppList {
             std::string title = entries[i].title;
             std::string titleId = entries[i].titleId;
             std::string reserved01 = entries[i].reserved01;
-            std::string reserved02 = entries[i].reserved02;
             std::string query = 
                 std::string("UPDATE tbl_appinfo_icon ")
                 + "SET pageId = " + std::to_string(entries[i].pageId) + ", pos = " + std::to_string(counter) + " "
                 + "WHERE ";
 
             if ((title == "(null)") && (titleId == "(null)")) {
-                if (reserved01 != "(null)")
+                // Check if power icon on PSTV, otherwise use reserved01.
+                if (entries[i].icon0Type == 8)
+                    query.append("icon0Type = " + std::to_string(entries[i].icon0Type) + ";");
+                else if (reserved01 != "(null)")
                     query.append("reserved01 = " + reserved01 + ";");
-                else if (reserved02 != "(null)")
-                    query.append("reserved02 = '" + reserved02 + "';");
             }
             else {
                 query.append((titleId == "(null)"? "title = '" + title + "'" : "titleId = '" + titleId + "'")
-                + (entries[i].folder == true? " AND reserved01 = " + reserved01 + ";" : ";"));
+                + (entries[i].icon0Type == 7? " AND reserved01 = " + reserved01 + ";" : ";"));
             }
             
             ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, nullptr);
@@ -154,21 +154,21 @@ namespace AppList {
             std::string title = entries[i].title;
             std::string titleId = entries[i].titleId;
             std::string reserved01 = entries[i].reserved01;
-            std::string reserved02 = entries[i].reserved02;
             std::string query = 
                 std::string("UPDATE tbl_appinfo_icon ")
                 + "SET pageId = " + std::to_string(entries[i].pageId) + ", pos = " + std::to_string(entries[i].pos) + " "
                 + "WHERE ";
 
             if ((title == "(null)") && (titleId == "(null)")) {
-                if (reserved01 != "(null)")
+                // Check if power icon on PSTV, otherwise use reserved01.
+                if (entries[i].icon0Type == 8)
+                    query.append("icon0Type = " + std::to_string(entries[i].icon0Type) + ";");
+                else if (reserved01 != "(null)")
                     query.append("reserved01 = " + reserved01 + ";");
-                else if (reserved02 != "(null)")
-                    query.append("reserved02 = '" + reserved02 + "';");
             }
             else {
                 query.append((titleId == "(null)"? "title = '" + title + "'" : "titleId = '" + titleId + "'")
-                + (entries[i].folder == true? " AND reserved01 = " + reserved01 + ";" : ";"));
+                + (entries[i].icon0Type == 7? " AND reserved01 = " + reserved01 + ";" : ";"));
             }
 
             ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, nullptr);

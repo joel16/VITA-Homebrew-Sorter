@@ -11,8 +11,7 @@ struct AppInfoIcon {
     char title[128];
     char titleId[16];
     char reserved01[16];
-    char reserved02[128];
-    bool folder = false;
+    int icon0Type = 0; 
 };
 
 struct AppInfoPage {
