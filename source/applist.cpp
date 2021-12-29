@@ -103,8 +103,9 @@ namespace AppList {
     }
 
     int Save(std::vector<AppInfoIcon> &entries) {
-        sqlite3 *db;
         int ret = 0;
+        sqlite3 *db;
+        char *error = nullptr;
         
         if (R_FAILED(ret = FS::CopyFile(path, path_edit)))
             return ret;
@@ -140,9 +141,10 @@ namespace AppList {
                 + (entries[i].icon0Type == 7? " AND reserved01 = " + reserved01 + ";" : ";"));
             }
             
-            ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, nullptr);
+            ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, error);
             if (ret != SQLITE_OK) {
-                Log::Error("sqlite3_exec1 error %s\n", query.c_str());
+                Log::Error("sqlite3_exec1: %s error %s\n", query.c_str(), error);
+                sqlite3_free(error);
                 sqlite3_close(db);
                 FS::RemoveFile(path_edit);
                 Power::Unlock();
@@ -171,9 +173,10 @@ namespace AppList {
                 + (entries[i].icon0Type == 7? " AND reserved01 = " + reserved01 + ";" : ";"));
             }
 
-            ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, nullptr);
+            ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, error);
             if (ret != SQLITE_OK) {
-                Log::Error("sqlite3_exec2 error %s\n", query.c_str());
+                Log::Error("sqlite3_exec1: %s error %s\n", query.c_str(), error);
+                sqlite3_free(error);
                 sqlite3_close(db);
                 FS::RemoveFile(path_edit);
                 Power::Unlock();
@@ -182,6 +185,7 @@ namespace AppList {
         }
 
         Power::Unlock();
+        sqlite3_free(error);
         sqlite3_close(db);
 
         if (R_FAILED(ret = FS::CopyFile(path_edit, path)))
@@ -312,7 +316,7 @@ namespace AppList {
 
         std::string query = "SELECT title FROM tbl_appinfo_icon;";
         
-        sqlite3_stmt *stmt;
+        sqlite3_stmt *stmt = nullptr;
         ret = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr);
 
         while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
