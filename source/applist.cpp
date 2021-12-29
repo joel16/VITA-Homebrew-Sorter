@@ -141,7 +141,7 @@ namespace AppList {
                 + (entries[i].icon0Type == 7? " AND reserved01 = " + reserved01 + ";" : ";"));
             }
             
-            ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, error);
+            ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
             if (ret != SQLITE_OK) {
                 Log::Error("sqlite3_exec1: %s error %s\n", query.c_str(), error);
                 sqlite3_free(error);
@@ -173,7 +173,7 @@ namespace AppList {
                 + (entries[i].icon0Type == 7? " AND reserved01 = " + reserved01 + ";" : ";"));
             }
 
-            ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, error);
+            ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
             if (ret != SQLITE_OK) {
                 Log::Error("sqlite3_exec1: %s error %s\n", query.c_str(), error);
                 sqlite3_free(error);
@@ -185,7 +185,6 @@ namespace AppList {
         }
 
         Power::Unlock();
-        sqlite3_free(error);
         sqlite3_close(db);
 
         if (R_FAILED(ret = FS::CopyFile(path_edit, path)))
