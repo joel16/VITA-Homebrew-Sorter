@@ -51,8 +51,8 @@ namespace AppList {
                 child.pageId = icon.pageId;
                 child.pageNo = icon.pageNo;
                 child.pos = icon.pos;
-                sceClibStrncpy(child.title, icon.title, 128);
-                sceClibStrncpy(child.titleId, icon.titleId, 16);
+                sceClibSnprintf(child.title, 128, icon.title);
+                sceClibSnprintf(child.titleId, 16, icon.titleId);
             }
             entries.icons.push_back(icon);
             entries.child_apps.push_back(child);
