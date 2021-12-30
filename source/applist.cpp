@@ -102,6 +102,14 @@ namespace AppList {
         return 0;
     }
 
+    static void Error(const std::string &query, char *error, sqlite3 *db, const std::string &path) {
+        Log::Error("%s error %s\n", query.c_str(), error);
+        sqlite3_free(error);
+        sqlite3_close(db);
+        FS::RemoveFile(path);
+        Power::Unlock();
+    }
+
     int Save(std::vector<AppInfoIcon> &entries) {
         int ret = 0;
         sqlite3 *db;
@@ -119,45 +127,28 @@ namespace AppList {
         // Lock power and prevent auto suspend.
         Power::Lock();
 
-        // Hacky workaround to avoid SQL's unique constraints. Please look away!
-        for (unsigned int i = 0, counter = 10; i < entries.size(); i++, counter++) {
-            std::string title = entries[i].title;
-            std::string titleId = entries[i].titleId;
-            std::string reserved01 = entries[i].reserved01;
-            std::string query = 
-                std::string("UPDATE tbl_appinfo_icon ")
-                + "SET pageId = " + std::to_string(entries[i].pageId) + ", pos = " + std::to_string(counter) + " "
-                + "WHERE ";
-
-            if ((title == "(null)") && (titleId == "(null)")) {
-                // Check if power icon on PSTV, otherwise use reserved01.
-                if (entries[i].icon0Type == 8)
-                    query.append("icon0Type = " + std::to_string(entries[i].icon0Type) + ";");
-                else if (reserved01 != "(null)")
-                    query.append("reserved01 = " + reserved01 + ";");
-            }
-            else {
-                query.append((titleId == "(null)"? "title = '" + title + "'" : "titleId = '" + titleId + "'")
-                + (entries[i].icon0Type == 7? " AND reserved01 = " + reserved01 + ";" : ";"));
-            }
-            
-            ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
+        const char *prepare_query[] = {
+            "BEGIN TRANSACTION",
+            "PRAGMA foreign_keys = off",
+            "CREATE TABLE tbl_appinfo_icon_sort AS SELECT * FROM tbl_appinfo_icon",
+            "DROP TABLE tbl_appinfo_icon",
+        };
+        
+        for (int i = 0; i < 4; ++i) {
+            ret = sqlite3_exec(db, prepare_query[i], nullptr, nullptr, &error);
             if (ret != SQLITE_OK) {
-                Log::Error("sqlite3_exec1: %s error %s\n", query.c_str(), error);
-                sqlite3_free(error);
-                sqlite3_close(db);
-                FS::RemoveFile(path_edit);
-                Power::Unlock();
+                AppList::Error(prepare_query[i], error, db, path_edit);
                 return ret;
             }
         }
 
+        // Update tbl_appinfo_icon_sort with sorted icons
         for (unsigned int i = 0; i < entries.size(); i++) {
             std::string title = entries[i].title;
             std::string titleId = entries[i].titleId;
             std::string reserved01 = entries[i].reserved01;
             std::string query = 
-                std::string("UPDATE tbl_appinfo_icon ")
+                std::string("UPDATE tbl_appinfo_icon_sort ")
                 + "SET pageId = " + std::to_string(entries[i].pageId) + ", pos = " + std::to_string(entries[i].pos) + " "
                 + "WHERE ";
 
@@ -175,11 +166,25 @@ namespace AppList {
 
             ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
             if (ret != SQLITE_OK) {
-                Log::Error("sqlite3_exec1: %s error %s\n", query.c_str(), error);
-                sqlite3_free(error);
-                sqlite3_close(db);
-                FS::RemoveFile(path_edit);
-                Power::Unlock();
+                AppList::Error(query, error, db, path_edit);
+                return ret;
+            }
+        }
+
+        const char *finish_query[] = {
+            "CREATE TABLE tbl_appinfo_icon(pageId REFERENCES tbl_appinfo_page(pageId) ON DELETE RESTRICT NOT NULL, pos INT NOT NULL, iconPath TEXT, title TEXT COLLATE NOCASE, type NOT NULL, command TEXT, titleId TEXT, icon0Type NOT NULL, parentalLockLv INT, status INT, reserved01, reserved02, reserved03, reserved04, reserved05, PRIMARY KEY(pageId, pos))",
+            "CREATE INDEX idx_icon_pos ON tbl_appinfo_icon ( pos, pageId )",
+            "CREATE INDEX idx_icon_title ON tbl_appinfo_icon (title, titleId, type)",
+            "INSERT INTO tbl_appinfo_icon SELECT * FROM tbl_appinfo_icon_sort",
+            "DROP TABLE tbl_appinfo_icon_sort",
+            "PRAGMA foreign_keys = on",
+            "COMMIT"
+        };
+
+        for (int i = 0; i < 7; ++i) {
+            ret = sqlite3_exec(db, finish_query[i], nullptr, nullptr, &error);
+            if (ret != SQLITE_OK) {
+                AppList::Error(finish_query[i], error, db, path_edit);
                 return ret;
             }
         }

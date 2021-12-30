@@ -8,9 +8,9 @@ struct AppInfoIcon {
     int pageId = 0;
     int pageNo = 0;
     int pos = 0;
-    char title[128];
-    char titleId[16];
-    char reserved01[16];
+    char title[128] = {0};
+    char titleId[16] = {0};
+    char reserved01[16] = {0};
     int icon0Type = 0; 
 };
 
@@ -29,8 +29,8 @@ struct AppInfoChild {
     int pageId = 0;
     int pageNo = 0;
     int pos = 0;
-    char title[128];
-    char titleId[16];
+    char title[128] = {0};
+    char titleId[16] = {0};
 };
 
 struct AppEntries {
