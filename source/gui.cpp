@@ -479,7 +479,7 @@ namespace GUI {
             if (ImGui::Begin("VITA Homebrew Sorter", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
                 if (ImGui::BeginTabBar("VITA Homebrew Sorter tabs")) {
                     GUI::SortTab(entries, sort, state);
-                    GUI::LoadoutsTab(loadouts, state, date_format, loadout_name);
+                    //GUI::LoadoutsTab(loadouts, state, date_format, loadout_name);
                     GUI::AboutTab();
                     ImGui::EndTabBar();
                 }
