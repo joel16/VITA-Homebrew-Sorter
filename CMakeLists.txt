@@ -16,6 +16,7 @@ set(VITA_TITLEID "VITAHBSRT")
 set(VITA_VERSION "01.24")
 
 add_definitions(-DAPP_VERSION="${VITA_VERSION}")
+add_definitions(-DVHBS_DEBUG=0)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -mtune=cortex-a9 -mfpu=neon -Wall -Wno-psabi -std=gnu++17")
 set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d PARENTAL_LEVEL=1")
@@ -54,6 +55,7 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
   freetype
   png
+  sqlite3
   pthread
   lzma
   z
@@ -70,7 +72,6 @@ target_link_libraries(${PROJECT_NAME}
   SceLibKernel_stub
   ScePower_stub
   SceShaccCg_stub
-  SceSqlite_stub
   SceSysmodule_stub
   SceTouch_stub
 )
