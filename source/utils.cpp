@@ -7,8 +7,8 @@
 #include "log.h"
 #include "utils.h"
 
-int SCE_CTRL_ENTER, SCE_CTRL_CANCEL;
-unsigned int pressed;
+int SCE_CTRL_ENTER = 0, SCE_CTRL_CANCEL = 0;
+unsigned int pressed = 0;
 
 namespace Utils {
     static SceCtrlData pad, old_pad;

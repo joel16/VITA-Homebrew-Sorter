@@ -20,14 +20,13 @@ namespace AppList {
         entries.folders.clear();
         entries.child_apps.clear();
 
-        sqlite3 *db;
+        sqlite3 *db = nullptr;
         int ret = sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE, nullptr);
 
         if (ret)
             return -1;
 
-        std::string query = 
-            std::string("SELECT info_icon.pageId, info_page.pageNo, info_icon.pos, info_icon.title, info_icon.titleId, info_icon.reserved01, ")
+        std::string query = std::string("SELECT info_icon.pageId, info_page.pageNo, info_icon.pos, info_icon.title, info_icon.titleId, info_icon.reserved01, ")
             + "info_icon.icon0Type "
             + "FROM tbl_appinfo_icon info_icon "
             + "INNER JOIN tbl_appinfo_page info_page "
@@ -66,8 +65,7 @@ namespace AppList {
         
         sqlite3_finalize(stmt);
 
-        query = 
-            std::string("SELECT DISTINCT info_page.pageId, info_page.pageNo ")
+        query = std::string("SELECT DISTINCT info_page.pageId, info_page.pageNo ")
             + "FROM tbl_appinfo_page info_page "
             + "INNER JOIN tbl_appinfo_icon info_icon "
             + "ON info_page.pageId = info_icon.pageId "
@@ -112,7 +110,7 @@ namespace AppList {
 
     int Save(std::vector<AppInfoIcon> &entries) {
         int ret = 0;
-        sqlite3 *db;
+        sqlite3 *db = nullptr;
         char *error = nullptr;
         
         if (R_FAILED(ret = FS::CopyFile(path, path_edit)))
@@ -147,8 +145,7 @@ namespace AppList {
             std::string title = entries[i].title;
             std::string titleId = entries[i].titleId;
             std::string reserved01 = entries[i].reserved01;
-            std::string query = 
-                std::string("UPDATE tbl_appinfo_icon_sort ")
+            std::string query = std::string("UPDATE tbl_appinfo_icon_sort ")
                 + "SET pageId = " + std::to_string(entries[i].pageId) + ", pos = " + std::to_string(entries[i].pos) + " "
                 + "WHERE ";
 
@@ -160,7 +157,7 @@ namespace AppList {
                     query.append("reserved01 = " + reserved01 + ";");
             }
             else {
-                query.append((titleId == "(null)"? "title = '" + title + "'" : "titleId = '" + titleId + "'")
+                query.append((titleId == "(null)"? "title = \"" + title + "\"" : "titleId = \"" + titleId + "\"")
                 + (entries[i].icon0Type == 7? " AND reserved01 = " + reserved01 + ";" : ";"));
             }
 
@@ -253,6 +250,7 @@ namespace AppList {
 
     void Sort(AppEntries &entries) {
         int pos = 0, pageCounter = 0;
+
         for (unsigned int i = 0; i < entries.icons.size(); i ++) {
             // Reset position
             if (pos > 9) {
@@ -312,7 +310,7 @@ namespace AppList {
         std::vector<std::string> loadout_entries;
         std::vector<std::string> diff_entries;
 
-        sqlite3 *db;
+        sqlite3 *db = nullptr;
         int ret = sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE, nullptr);
 
         if (ret)
