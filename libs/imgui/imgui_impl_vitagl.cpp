@@ -223,9 +223,8 @@ void ImGui_ImplVitaGL_RenderDrawData(ImDrawData *draw_data) {
 				
 				// Bind texture, Draw
 				glBindTexture(GL_TEXTURE_2D, reinterpret_cast<GLuint>(pcmd->GetTexID()));
-				glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(pcmd->ElemCount), sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, idx_buffer);
+				glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(pcmd->ElemCount), sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, idx_buffer + pcmd->IdxOffset);
 			}
-			idx_buffer += pcmd->ElemCount;
 		}
 	}
 	
