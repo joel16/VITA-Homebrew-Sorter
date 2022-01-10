@@ -27,7 +27,7 @@ namespace Renderer {
 
         ImGui::Render();
         ImGui_ImplVitaGL_RenderDrawData(ImGui::GetDrawData());
-        vglSwapBuffers(GL_FALSE);
+        vglSwapBuffers(GL_TRUE);
     }
 }
 
