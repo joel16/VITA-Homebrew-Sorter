@@ -6,7 +6,6 @@
 #include "gui.h"
 #include "log.h"
 #include "power.h"
-#include "sqlite.h"
 #include "textures.h"
 #include "utils.h"
 
@@ -87,7 +86,6 @@ namespace Services {
 		SCE_CTRL_CANCEL = Utils::GetCancelButton();
 		
 		sceSysmoduleLoadModule(SCE_SYSMODULE_SQLITE);
-		SQLite::Init();
 
 		if (!FS::DirExists("ux0:data/VITAHomebrewSorter/backup"))
 			FS::MakeDir("ux0:data/VITAHomebrewSorter/backup");
@@ -105,7 +103,6 @@ namespace Services {
 		// Clean up
 		Textures::Exit();
 		Log::Exit();
-		SQLite::Exit();
 		sceSysmoduleUnloadModule(SCE_SYSMODULE_SQLITE);
 		Utils::EndAppUtil();
 		ImGui_ImplVitaGL_Shutdown();
