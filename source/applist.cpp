@@ -11,8 +11,6 @@
 #include "utils.h"
 
 namespace AppList {
-    constexpr char db_path_edit[] = "ur0:shell/db/app.vhb.db";
-
     int Get(AppEntries &entries) {
         entries.icons.clear();
         entries.pages.clear();
@@ -115,14 +113,15 @@ namespace AppList {
         int ret = 0;
         sqlite3 *db = nullptr;
         char *error = nullptr;
+        char db_path_backup[] = "ur0:shell/db/app.db.sort.bkp";
         
-        if (R_FAILED(ret = FS::CopyFile(db_path, db_path_edit)))
+        if (R_FAILED(ret = FS::CopyFile(db_path, db_path_backup)))
             return ret;
 
-        ret = sqlite3_open_v2(db_path_edit, &db, SQLITE_OPEN_READWRITE, nullptr);
+        ret = sqlite3_open_v2(db_path, &db, SQLITE_OPEN_READWRITE, nullptr);
         if (ret != SQLITE_OK) {
-            Log::Error("sqlite3_open_v2 failed to open %s\n", db_path_edit);
-            FS::RemoveFile(db_path_edit);
+            Log::Error("sqlite3_open_v2 failed to open %s\n", db_path);
+            FS::RemoveFile(db_path);
             return ret;
         }
 
@@ -132,14 +131,14 @@ namespace AppList {
         const char *prepare_query[] = {
             "BEGIN TRANSACTION",
             "PRAGMA foreign_keys = off",
-            "CREATE TABLE tbl_appinfo_icon_sort AS SELECT * FROM tbl_appinfo_icon",
-            "DROP TABLE tbl_appinfo_icon",
+            "DROP TABLE IF EXISTS tbl_appinfo_icon_sort",
+            "CREATE TABLE tbl_appinfo_icon_sort AS SELECT * FROM tbl_appinfo_icon"
         };
         
         for (int i = 0; i < 4; ++i) {
             ret = sqlite3_exec(db, prepare_query[i], nullptr, nullptr, &error);
             if (ret != SQLITE_OK) {
-                AppList::Error(prepare_query[i], error, db, db_path_edit);
+                AppList::Error(prepare_query[i], error, db, db_path);
                 return ret;
             }
         }
@@ -167,12 +166,22 @@ namespace AppList {
 
             ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
             if (ret != SQLITE_OK) {
-                AppList::Error(query, error, db, db_path_edit);
+                AppList::Error(query, error, db, db_path);
+
+                // If sorting fails, drop tbl_appinfo_icon_sort.
+                query = std::string("DROP TABLE IF EXISTS tbl_appinfo_icon_sort");
+                int ret_next = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
+                if (ret_next != SQLITE_OK) {
+                    AppList::Error(query, error, db, db_path);
+                    return ret_next;
+                }
+
                 return ret;
             }
         }
 
         const char *finish_query[] = {
+            "DROP TABLE tbl_appinfo_icon",
             "CREATE TABLE tbl_appinfo_icon(pageId REFERENCES tbl_appinfo_page(pageId) ON DELETE RESTRICT NOT NULL, pos INT NOT NULL, iconPath TEXT, title TEXT COLLATE NOCASE, type NOT NULL, command TEXT, titleId TEXT, icon0Type NOT NULL, parentalLockLv INT, status INT, reserved01, reserved02, reserved03, reserved04, reserved05, PRIMARY KEY(pageId, pos))",
             "CREATE INDEX idx_icon_pos ON tbl_appinfo_icon ( pos, pageId )",
             "CREATE INDEX idx_icon_title ON tbl_appinfo_icon (title, titleId, type)",
@@ -182,21 +191,16 @@ namespace AppList {
             "COMMIT"
         };
 
-        for (int i = 0; i < 7; ++i) {
+        for (int i = 0; i < 8; ++i) {
             ret = sqlite3_exec(db, finish_query[i], nullptr, nullptr, &error);
             if (ret != SQLITE_OK) {
-                AppList::Error(finish_query[i], error, db, db_path_edit);
+                AppList::Error(finish_query[i], error, db, db_path);
                 return ret;
             }
         }
 
         Power::Unlock();
         sqlite3_close(db);
-
-        if (R_FAILED(ret = FS::CopyFile(db_path_edit, db_path)))
-            return ret;
-
-        FS::RemoveFile(db_path_edit);
         return 0;
     }
 
