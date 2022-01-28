@@ -11,8 +11,7 @@
 #include "utils.h"
 
 namespace AppList {
-    constexpr char path[] = "ur0:shell/db/app.db";
-    constexpr char path_edit[] = "ur0:shell/db/app.vhb.db";
+    constexpr char db_path_edit[] = "ur0:shell/db/app.vhb.db";
 
     int Get(AppEntries &entries) {
         entries.icons.clear();
@@ -21,10 +20,11 @@ namespace AppList {
         entries.child_apps.clear();
 
         sqlite3 *db = nullptr;
-        int ret = sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE, nullptr);
-
-        if (ret)
-            return -1;
+        int ret = sqlite3_open_v2(db_path, &db, SQLITE_OPEN_READWRITE, nullptr);
+        if (ret != SQLITE_OK) {
+            Log::Error("sqlite3_open_v2 failed to open %s\n", db_path);
+            return ret;
+        }
 
         std::string query = std::string("SELECT info_icon.pageId, info_page.pageNo, info_icon.pos, info_icon.title, info_icon.titleId, info_icon.reserved01, ")
             + "info_icon.icon0Type "
@@ -38,6 +38,7 @@ namespace AppList {
         while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
             AppInfoIcon icon;
             AppInfoChild child;
+
             icon.pageId = std::stoi(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
             icon.pageNo = sqlite3_column_int(stmt, 1);
             icon.pos = sqlite3_column_int(stmt, 2);
@@ -53,6 +54,7 @@ namespace AppList {
                 sceClibSnprintf(child.title, 128, icon.title);
                 sceClibSnprintf(child.titleId, 16, icon.titleId);
             }
+
             entries.icons.push_back(icon);
             entries.child_apps.push_back(child);
         }
@@ -76,6 +78,7 @@ namespace AppList {
         while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
             AppInfoPage page;
             AppInfoFolder folder;
+            
             int pageNo = sqlite3_column_int(stmt, 1);
 
             if (pageNo >= 0) {
@@ -113,12 +116,13 @@ namespace AppList {
         sqlite3 *db = nullptr;
         char *error = nullptr;
         
-        if (R_FAILED(ret = FS::CopyFile(path, path_edit)))
+        if (R_FAILED(ret = FS::CopyFile(db_path, db_path_edit)))
             return ret;
 
-        ret = sqlite3_open_v2(path_edit, &db, SQLITE_OPEN_READWRITE, nullptr);
-        if (ret) {
-            FS::RemoveFile(path_edit);
+        ret = sqlite3_open_v2(db_path_edit, &db, SQLITE_OPEN_READWRITE, nullptr);
+        if (ret != SQLITE_OK) {
+            Log::Error("sqlite3_open_v2 failed to open %s\n", db_path_edit);
+            FS::RemoveFile(db_path_edit);
             return ret;
         }
 
@@ -135,7 +139,7 @@ namespace AppList {
         for (int i = 0; i < 4; ++i) {
             ret = sqlite3_exec(db, prepare_query[i], nullptr, nullptr, &error);
             if (ret != SQLITE_OK) {
-                AppList::Error(prepare_query[i], error, db, path_edit);
+                AppList::Error(prepare_query[i], error, db, db_path_edit);
                 return ret;
             }
         }
@@ -163,7 +167,7 @@ namespace AppList {
 
             ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
             if (ret != SQLITE_OK) {
-                AppList::Error(query, error, db, path_edit);
+                AppList::Error(query, error, db, db_path_edit);
                 return ret;
             }
         }
@@ -181,7 +185,7 @@ namespace AppList {
         for (int i = 0; i < 7; ++i) {
             ret = sqlite3_exec(db, finish_query[i], nullptr, nullptr, &error);
             if (ret != SQLITE_OK) {
-                AppList::Error(finish_query[i], error, db, path_edit);
+                AppList::Error(finish_query[i], error, db, db_path_edit);
                 return ret;
             }
         }
@@ -189,10 +193,10 @@ namespace AppList {
         Power::Unlock();
         sqlite3_close(db);
 
-        if (R_FAILED(ret = FS::CopyFile(path_edit, path)))
+        if (R_FAILED(ret = FS::CopyFile(db_path_edit, db_path)))
             return ret;
 
-        FS::RemoveFile(path_edit);
+        FS::RemoveFile(db_path_edit);
         return 0;
     }
 
@@ -284,7 +288,7 @@ namespace AppList {
         else
             backup_path = "ux0:data/VITAHomebrewSorter/backup/app.db";
             
-        if (R_FAILED(ret = FS::CopyFile(path, backup_path)))
+        if (R_FAILED(ret = FS::CopyFile(db_path, backup_path)))
             return ret;
             
         return 0;
@@ -299,7 +303,7 @@ namespace AppList {
         else
             restore_path = "ux0:data/VITAHomebrewSorter/backup/app.db";
 
-        if (R_FAILED(ret = FS::CopyFile(restore_path, path)))
+        if (R_FAILED(ret = FS::CopyFile(restore_path, db_path)))
             return ret;
         
         return 0;
@@ -311,10 +315,11 @@ namespace AppList {
         std::vector<std::string> diff_entries;
 
         sqlite3 *db = nullptr;
-        int ret = sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE, nullptr);
-
-        if (ret)
+        int ret = sqlite3_open_v2(db_path, &db, SQLITE_OPEN_READWRITE, nullptr);
+        if (ret != SQLITE_OK) {
+            Log::Error("sqlite3_open_v2 failed to open %s\n", db_path);
             return false;
+        }
 
         std::string query = "SELECT title FROM tbl_appinfo_icon;";
         
@@ -335,11 +340,12 @@ namespace AppList {
         sqlite3_finalize(stmt);
         sqlite3_close(db);
 
-        std::string db_path = "ux0:data/VITAHomebrewSorter/loadouts/" + db_name;
-        ret = sqlite3_open_v2(db_path.c_str(), &db, SQLITE_OPEN_READWRITE, nullptr);
-
-        if (ret)
+        std::string loadout_path = "ux0:data/VITAHomebrewSorter/loadouts/" + db_name;
+        ret = sqlite3_open_v2(loadout_path.c_str(), &db, SQLITE_OPEN_READWRITE, nullptr);
+        if (ret != SQLITE_OK) {
+            Log::Error("sqlite3_open_v2 failed to open %s\n", loadout_path.c_str());
             return false;
+        }
         
         ret = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr);
 

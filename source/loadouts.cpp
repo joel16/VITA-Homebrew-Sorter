@@ -3,7 +3,6 @@
 #include "utils.h"
 
 namespace Loadouts {
-    constexpr char db_path[] = "ur0:shell/db/app.db";
     constexpr char ini_path[] = "ux0:iconlayout.ini";
     
     static std::string StripExt(const std::string &filename) {

@@ -13,6 +13,8 @@
 extern int SCE_CTRL_ENTER, SCE_CTRL_CANCEL;
 extern unsigned int pressed;
 
+constexpr char db_path[] = "ur0:shell/db/app.db";
+
 namespace Utils {
     int InitAppUtil(void);
     int EndAppUtil(void);
