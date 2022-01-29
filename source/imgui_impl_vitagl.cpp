@@ -44,8 +44,9 @@ bool ImGui_ImplVitaGL_Init(void) {
 }
 
 void ImGui_ImplVitaGL_Shutdown(void) {
-	ImGuiIO& io = ImGui::GetIO();
 	ImGui_ImplVitaGL_Data *bd = ImGui_ImplVitaGL_GetBackendData();
+	IM_ASSERT(bd != NULL && "No renderer backend to shutdown, or already shutdown?");
+	ImGuiIO& io = ImGui::GetIO();
 	
 	ImGui_ImplVitaGL_DestroyDeviceObjects();
 	io.BackendRendererName = nullptr;
@@ -215,7 +216,7 @@ void ImGui_ImplVitaGL_RenderDrawData(ImDrawData *draw_data) {
 				// Project scissor/clipping rectangles into framebuffer space
 				ImVec2 clip_min((pcmd->ClipRect.x - clip_off.x) * clip_scale.x, (pcmd->ClipRect.y - clip_off.y) * clip_scale.y);
 				ImVec2 clip_max((pcmd->ClipRect.z - clip_off.x) * clip_scale.x, (pcmd->ClipRect.w - clip_off.y) * clip_scale.y);
-				if (clip_max.x < clip_min.x || clip_max.y < clip_min.y)
+				if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
 					continue;
 					
 				// Apply scissor/clipping rectangle (Y is inverted in OpenGL)
