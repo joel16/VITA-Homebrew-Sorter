@@ -1,12 +1,12 @@
 #include <algorithm>
 #include <cstdio>
-#include <imgui_vita.h>
 #include <psp2/power.h>
 #include <psp2/kernel/clib.h>
 #include <vitaGL.h>
 
 #include "applist.h"
 #include "fs.h"
+#include "imgui_impl_vitagl.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui_internal.h"
 #include "loadouts.h"

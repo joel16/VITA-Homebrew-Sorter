@@ -1,9 +1,9 @@
 #include <psp2/sysmodule.h>
-#include <imgui_vita.h>
 #include <vitaGL.h>
 
 #include "fs.h"
 #include "gui.h"
+#include "imgui_impl_vitagl.h"
 #include "log.h"
 #include "power.h"
 #include "textures.h"
