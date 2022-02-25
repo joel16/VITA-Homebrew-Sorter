@@ -8,12 +8,6 @@
 #include <psp2/rtc.h>
 //#include <unistd.h>
 
-#if VHBS_DEBUG
-#define DEBUG sceClibPrintf
-#else
-#define DEBUG(...)
-#endif
-
 #define MAXPATHNAME 512
 
 /*

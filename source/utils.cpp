@@ -2,7 +2,6 @@
 #include <psp2/common_dialog.h>
 #include <psp2/rtc.h>
 #include <psp2/kernel/clib.h>
-#include <cstdio>
 
 #include "log.h"
 #include "utils.h"

@@ -1,3 +1,4 @@
+#include <memory>
 #include <png.h>
 #include <psp2/kernel/clib.h>
 #include <string>
@@ -11,7 +12,7 @@ std::vector<Tex> icons;
 namespace Textures {
     constexpr int max_textures = 4;
 
-    static bool LoadImage(unsigned char *data, GLint format, Tex &texture, void (*free_func)(void *)) {    
+    static bool Create(unsigned char *data, GLint format, Tex &texture) {    
         // Create a OpenGL texture identifier
         glGenTextures(1, &texture.id);
         glBindTexture(GL_TEXTURE_2D, texture.id);
@@ -22,10 +23,6 @@ namespace Textures {
         
         // Upload pixels into texture
         glTexImage2D(GL_TEXTURE_2D, 0, format, texture.width, texture.height, 0, format, GL_UNSIGNED_BYTE, data);
-
-        if (*free_func)
-            free_func(data);
-        
         return true;
     }
 
@@ -34,35 +31,24 @@ namespace Textures {
         png_image image;
         sceClibMemset(&image, 0, (sizeof image));
         image.version = PNG_IMAGE_VERSION;
-
+        
         if (png_image_begin_read_from_file(&image, path.c_str()) != 0) {
-            png_bytep buffer;
             image.format = PNG_FORMAT_RGBA;
-            buffer = new png_byte[PNG_IMAGE_SIZE(image)];
+            std::unique_ptr<png_byte[]> buffer(new png_byte[PNG_IMAGE_SIZE(image)]);
             
-            if (buffer != nullptr && png_image_finish_read(&image, nullptr, buffer, 0, nullptr) != 0) {
+            if (png_image_finish_read(&image, nullptr, buffer.get(), 0, nullptr) != 0) {
                 texture.width = image.width;
                 texture.height = image.height;
-                ret = Textures::LoadImage(buffer, GL_RGBA, texture, nullptr);
-                
-                if (buffer == nullptr)
-                    png_image_free(&image);
-                else
-                    delete[] buffer;
+                ret = Textures::Create(buffer.get(), GL_RGBA, texture);
+                png_image_free(&image);
             }
             else {
-                if (buffer == nullptr) {
-                    Log::Error("png_byte buffer: returned nullptr\n");
-                    png_image_free(&image);
-                }
-                else {
-                    Log::Error("png_image_finish_read failed: %s\n", image.message);
-                    delete[] buffer;
-                }
+                Log::Error("png_image_finish_read failed: %s\n", image.message);
+                png_image_free(&image);
             }
         }
         else
-            Log::Error("png_image_begin_read_from_file(%s) failed: %s\n", path.c_str(), image.message);
+            Log::Error("png_image_begin_read_from_memory failed: %s\n", image.message);
         
         return ret;
     }

@@ -1,10 +1,10 @@
 #include <algorithm>
 #include <filesystem>
+#include <memory>
 #include <psp2/io/dirent.h>
 #include <psp2/io/fcntl.h>
 #include <psp2/io/stat.h>
 #include <psp2/kernel/clib.h>
-#include <string>
 #include <vector>
 
 #include "log.h"
@@ -141,34 +141,23 @@ namespace FS {
 
     int CopyFile(const std::string &src_path, const std::string &dest_path) {
         int ret = 0;
-        unsigned char *data = nullptr;
+        std::unique_ptr<unsigned char[]> buffer(new unsigned char[512]);
         SceOff size = 0;
 
         if (R_FAILED(ret = FS::GetFileSize(src_path, size)))
             return ret;
-
-        data = new unsigned char[size];
-        if (!data)
-            return -1;
         
-        if (R_FAILED(ret = FS::ReadFile(src_path, data, size))) {
-            delete[] data;
+        if (R_FAILED(ret = FS::ReadFile(src_path, buffer.get(), size)))
             return ret;
-        }
             
         if (FS::FileExists(dest_path)) {
-            if (R_FAILED(ret = FS::RemoveFile(dest_path))) {
-                delete[] data;
+            if (R_FAILED(ret = FS::RemoveFile(dest_path)))
                 return ret;
-            }
         }
 
-        if (R_FAILED(ret = FS::WriteFile(dest_path, data, size))) {
-            delete[] data;
+        if (R_FAILED(ret = FS::WriteFile(dest_path, buffer.get(), size)))
             return ret;
-        }
-
-        delete[] data;
+        
         return 0;
     }
 
