@@ -23,7 +23,7 @@ add_definitions(
     -DIMGUI_DISABLE_WIN32_FUNCTIONS -DIMGUI_DISABLE_STB_TRUETYPE_IMPLEMENTATION -DIMGUI_ENABLE_FREETYPE
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -mtune=cortex-a9 -mfpu=neon -Wall -Wno-psabi -std=gnu++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -mtune=cortex-a9 -mfpu=neon -Wall -Wno-psabi -fno-rtti -std=gnu++17")
 set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d PARENTAL_LEVEL=1")
 
 
@@ -45,6 +45,7 @@ add_executable(${PROJECT_NAME}
     libs/imgui/imgui_widgets.cpp
     libs/imgui/misc/freetype/imgui_freetype.cpp
     source/applist.cpp
+    source/config.cpp
     source/fs.cpp
     source/gui.cpp
     source/imgui_impl_vitagl.cpp
@@ -75,6 +76,7 @@ target_link_libraries(${PROJECT_NAME}
     SceDisplay_stub
     SceGxm_stub
     SceKernelDmacMgr_stub
+    SceLibJson_stub
     SceLibKernel_stub
     ScePower_stub
     SceShaccCg_stub

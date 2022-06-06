@@ -4,6 +4,7 @@
 #include <string>
 
 #include "applist.h"
+#include "config.h"
 #include "fs.h"
 #include "log.h"
 #include "sqlite3.h"
@@ -205,8 +206,8 @@ namespace AppList {
     }
 
     bool SortAppAsc(const AppInfoIcon &entryA, const AppInfoIcon &entryB) {
-        std::string entryAname = sort_mode == 0? entryA.title : entryA.titleId;
-        std::string entryBname = sort_mode == 0? entryB.title : entryB.titleId;
+        std::string entryAname = cfg.sort_by == 0? entryA.title : entryA.titleId;
+        std::string entryBname = cfg.sort_by == 0? entryB.title : entryB.titleId;
 
         std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
         std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
@@ -218,8 +219,8 @@ namespace AppList {
     }
 
     bool SortAppDesc(const AppInfoIcon &entryA, const AppInfoIcon &entryB) {
-        std::string entryAname = sort_mode == 0? entryA.title : entryA.titleId;
-        std::string entryBname = sort_mode == 0? entryB.title : entryB.titleId;
+        std::string entryAname = cfg.sort_by == 0? entryA.title : entryA.titleId;
+        std::string entryBname = cfg.sort_by == 0? entryB.title : entryB.titleId;
 
         std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
         std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
@@ -231,8 +232,8 @@ namespace AppList {
     }
 
     bool SortChildAppAsc(const AppInfoChild &entryA, const AppInfoChild &entryB) {
-        std::string entryAname = sort_mode == 0? entryA.title : entryA.titleId;
-        std::string entryBname = sort_mode == 0? entryB.title : entryB.titleId;
+        std::string entryAname = cfg.sort_by == 0? entryA.title : entryA.titleId;
+        std::string entryBname = cfg.sort_by == 0? entryB.title : entryB.titleId;
 
         std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
         std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
@@ -244,8 +245,8 @@ namespace AppList {
     }
 
     bool SortChildAppDesc(const AppInfoChild &entryA, const AppInfoChild &entryB) {
-        std::string entryAname = sort_mode == 0? entryA.title : entryA.titleId;
-        std::string entryBname = sort_mode == 0? entryB.title : entryB.titleId;
+        std::string entryAname = cfg.sort_by == 0? entryA.title : entryA.titleId;
+        std::string entryBname = cfg.sort_by == 0? entryB.title : entryB.titleId;
 
         std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
         std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
@@ -267,7 +268,7 @@ namespace AppList {
             }
             
             // App/Game belongs to a folder
-            if (entries.icons[i].pageNo < 0) {
+            if ((entries.icons[i].pageNo < 0) && (cfg.sort_folders == 0 || cfg.sort_folders == 2)) {
                 for (unsigned int j = 0; j < entries.folders.size(); j++) {
                     if (entries.icons[i].pageId == entries.folders[j].pageId) {
                         entries.icons[i].pos = entries.folders[j].index;
@@ -275,7 +276,7 @@ namespace AppList {
                     }
                 }
             }
-            else {
+            else if ((entries.icons[i].pageNo >= 0) && (cfg.sort_folders == 0 || cfg.sort_folders == 1)) {
                 entries.icons[i].pos = pos;
                 entries.icons[i].pageId = entries.pages[pageCounter].pageId;
                 pos++;

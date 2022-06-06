@@ -40,8 +40,6 @@ struct AppEntries {
     std::vector<AppInfoChild> child_apps;
 };
 
-extern int sort_mode;
-
 namespace AppList {
     int Get(AppEntries &entries);
     int Save(std::vector<AppInfoIcon> &entries);

@@ -1,6 +1,7 @@
 #include <psp2/sysmodule.h>
 #include <vitaGL.h>
 
+#include "config.h"
 #include "fs.h"
 #include "gui.h"
 #include "imgui_impl_vitagl.h"
@@ -85,7 +86,7 @@ namespace Services {
 		SCE_CTRL_ENTER = Utils::GetEnterButton();
 		SCE_CTRL_CANCEL = Utils::GetCancelButton();
 		
-		sceSysmoduleLoadModule(SCE_SYSMODULE_SQLITE);
+		sceSysmoduleLoadModule(SCE_SYSMODULE_JSON);
 
 		if (!FS::DirExists("ux0:data/VITAHomebrewSorter/backup"))
 			FS::MakeDir("ux0:data/VITAHomebrewSorter/backup");
@@ -95,15 +96,15 @@ namespace Services {
 		
 		Log::Init();
 		Textures::Init();
-
 		Power::InitThread();
+		Config::Load();
 	}
 
 	void Exit(void) {
 		// Clean up
 		Textures::Exit();
 		Log::Exit();
-		sceSysmoduleUnloadModule(SCE_SYSMODULE_SQLITE);
+		sceSysmoduleUnloadModule(SCE_SYSMODULE_JSON);
 		Utils::EndAppUtil();
 		ImGui_ImplVitaGL_Shutdown();
 		ImGui::DestroyContext();

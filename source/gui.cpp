@@ -5,6 +5,7 @@
 #include <vitaGL.h>
 
 #include "applist.h"
+#include "config.h"
 #include "fs.h"
 #include "imgui_impl_vitagl.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -13,8 +14,6 @@
 #include "sqlite3.h"
 #include "textures.h"
 #include "utils.h"
-
-int sort_mode = 0;
 
 namespace Renderer {
     static void End(bool clear, ImVec4 clear_color) {
@@ -44,6 +43,17 @@ namespace GUI {
     };
 
     enum SortBy {
+        SortTitle,
+        SortTitleID
+    };
+
+    enum SortFolders {
+        SortBoth,
+        SortAppsOnly,
+        SortFoldersOnly
+    };
+
+    enum SortMode {
         SortDefault,
         SortAsc,
         SortDesc
@@ -58,6 +68,8 @@ namespace GUI {
 
     static bool backupExists = false;
     static const ImVec2 tex_size = ImVec2(20, 20);
+    static const char *sort_by[] = {"Title", "Title ID"};
+    static const char *sort_folders[] = {"Both", "Apps only", "Folders only"};
 
     static void SetupPopup(const char *id) {
         ImGui::OpenPopup(id);
@@ -220,30 +232,66 @@ namespace GUI {
         GUI::ExitPopup();
     }
 
-    static void SortTab(AppEntries &entries, SortBy &sort, State &state) {
+    static void SortTab(AppEntries &entries, State &state) {
         ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter |
             ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY;
         
         if (ImGui::BeginTabItem("Sort/Backup")) {
             ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
+
+            ImGui::PushID("sort_by");
+            ImGui::PushItemWidth(100.f);
+            if (ImGui::BeginCombo("", sort_by[cfg.sort_by])) {
+                for (int i = 0; i < IM_ARRAYSIZE(sort_by); i++) {
+                    const bool is_selected = (cfg.sort_by == i);
+                    
+                    if (ImGui::Selectable(sort_by[i], is_selected)) {
+                        cfg.sort_by = i;
+                        Config::Save(cfg);
+                    }
+
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
+
+                ImGui::EndCombo();
+            }
+            ImGui::PopItemWidth();
+            ImGui::PopID();
+
+            ImGui::SameLine();
             
-            ImGui::SetNextItemWidth(100.0f);
-            if (ImGui::Combo("Sort by", &sort_mode, "Title\0Title ID\0")) {
-                sort = SortDefault;
+            ImGui::PushID("sort_folders");
+            ImGui::PushItemWidth(150.f);
+            if (ImGui::BeginCombo("", sort_folders[cfg.sort_folders])) {
+                for (int i = 0; i < IM_ARRAYSIZE(sort_folders); i++) {
+                    const bool is_selected = (cfg.sort_folders == i);
+                    
+                    if (ImGui::Selectable(sort_folders[i], is_selected)) {
+                        cfg.sort_folders = i;
+                        Config::Save(cfg);
+                    }
+                        
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
+
+                ImGui::EndCombo();
+            }
+            ImGui::PopItemWidth();
+            ImGui::PopID();
+            
+            ImGui::SameLine();
+            
+            if (ImGui::RadioButton("Default", cfg.sort_mode == SortDefault)) {
+                cfg.sort_mode = SortDefault;
                 AppList::Get(entries);
             }
             
             ImGui::SameLine();
             
-            if (ImGui::RadioButton("Default", sort == SortDefault)) {
-                sort = SortDefault;
-                AppList::Get(entries);
-            }
-            
-            ImGui::SameLine();
-            
-            if (ImGui::RadioButton("Asc", sort == SortAsc)) {
-                sort = SortAsc;
+            if (ImGui::RadioButton("Asc", cfg.sort_mode == SortAsc)) {
+                cfg.sort_mode = SortAsc;
                 AppList::Get(entries);
                 std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAppAsc);
                 std::sort(entries.child_apps.begin(), entries.child_apps.end(), AppList::SortChildAppAsc);
@@ -252,8 +300,8 @@ namespace GUI {
             
             ImGui::SameLine();
             
-            if (ImGui::RadioButton("Desc", sort == SortDesc)) {
-                sort = SortDesc;
+            if (ImGui::RadioButton("Desc", cfg.sort_mode == SortDesc)) {
+                cfg.sort_mode = SortDesc;
                 AppList::Get(entries);
                 std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAppDesc);
                 std::sort(entries.child_apps.begin(), entries.child_apps.end(), AppList::SortChildAppDesc);
@@ -262,10 +310,10 @@ namespace GUI {
             
             ImGui::SameLine();
             
-            GUI::DisableButtonInit(sort == SortDefault);
+            GUI::DisableButtonInit(cfg.sort_mode == SortDefault);
             if (ImGui::Button("Apply Sort"))
                 state = StateConfirm;
-            GUI::DisableButtonExit(sort == SortDefault);
+            GUI::DisableButtonExit(cfg.sort_mode == SortDefault);
             
             if (backupExists) {
                 ImGui::SameLine();
@@ -422,9 +470,28 @@ namespace GUI {
         }
     }
 
-    static void AboutTab(void) {
-        if (ImGui::BeginTabItem("About")) {
+    static void SettingsTab(void) {
+        if (ImGui::BeginTabItem("Settings")) {
             ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
+
+            ImGui::Indent(5.f);
+            ImGui::TextColored(ImVec4(0.70f, 0.16f, 0.31f, 1.0f), "Beta features:");
+            ImGui::Indent(15.f);
+
+            if (ImGui::RadioButton("Enabled", cfg.beta_features == true)) {
+                cfg.beta_features = true;
+                Config::Save(cfg);
+            }
+            
+            ImGui::SameLine();
+            
+            if (ImGui::RadioButton("Disabled", cfg.beta_features == false)) {
+                cfg.beta_features = false;
+                Config::Save(cfg);
+            }
+
+            ImGui::Dummy(ImVec2(0.0f, 10.0f)); // Spacing
+            ImGui::Unindent();
             
             ImGui::Indent(5.f);
             ImGui::TextColored(ImVec4(0.70f, 0.16f, 0.31f, 1.0f), "App Info:");
@@ -465,10 +532,7 @@ namespace GUI {
         FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
         int date_format = Utils::GetDateFormat();
         std::string loadout_name;
-        
-        SortBy sort = SortDefault;
         State state = StateNone;
-
         SceCtrlData pad = { 0 };
         
         while (!done) {
@@ -478,11 +542,11 @@ namespace GUI {
 
             if (ImGui::Begin("VITA Homebrew Sorter", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
                 if (ImGui::BeginTabBar("VITA Homebrew Sorter tabs")) {
-                    GUI::SortTab(entries, sort, state);
-                    GUI::DisableButtonInit(true);
+                    GUI::SortTab(entries, state);
+                    GUI::DisableButtonInit(cfg.beta_features? false : true);
                     GUI::LoadoutsTab(loadouts, state, date_format, loadout_name);
-                    GUI::DisableButtonExit(true);
-                    GUI::AboutTab();
+                    GUI::DisableButtonExit(cfg.beta_features? false : true);
+                    GUI::SettingsTab();
                     ImGui::EndTabBar();
                 }
             }

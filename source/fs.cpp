@@ -105,7 +105,7 @@ namespace FS {
         return bytes_read;
     }
 
-    static int WriteFile(const std::string &path, const void *data, SceSize size) {
+    int WriteFile(const std::string &path, const void *data, SceSize size) {
         int ret = 0, bytes_written = 0;
         SceUID file = 0;
 
@@ -141,23 +141,34 @@ namespace FS {
 
     int CopyFile(const std::string &src_path, const std::string &dest_path) {
         int ret = 0;
-        std::unique_ptr<unsigned char[]> buffer(new unsigned char[512]);
+        unsigned char *data = nullptr;
         SceOff size = 0;
 
         if (R_FAILED(ret = FS::GetFileSize(src_path, size)))
             return ret;
+
+        data = new unsigned char[size];
+        if (!data)
+            return -1;
         
-        if (R_FAILED(ret = FS::ReadFile(src_path, buffer.get(), size)))
+        if (R_FAILED(ret = FS::ReadFile(src_path, data, size))) {
+            delete[] data;
             return ret;
+        }
             
         if (FS::FileExists(dest_path)) {
-            if (R_FAILED(ret = FS::RemoveFile(dest_path)))
+            if (R_FAILED(ret = FS::RemoveFile(dest_path))) {
+                delete[] data;
                 return ret;
+            }
         }
 
-        if (R_FAILED(ret = FS::WriteFile(dest_path, buffer.get(), size)))
+        if (R_FAILED(ret = FS::WriteFile(dest_path, data, size))) {
+            delete[] data;
             return ret;
-        
+        }
+
+        delete[] data;
         return 0;
     }
 
