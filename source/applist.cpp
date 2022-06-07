@@ -326,7 +326,7 @@ namespace AppList {
             return false;
         }
 
-        std::string query = "SELECT title FROM tbl_appinfo_icon;";
+        const std::string query = "SELECT title FROM tbl_appinfo_icon;";
         
         sqlite3_stmt *stmt = nullptr;
         ret = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr);
@@ -345,7 +345,8 @@ namespace AppList {
         sqlite3_finalize(stmt);
         sqlite3_close(db);
 
-        std::string loadout_path = "ux0:data/VITAHomebrewSorter/loadouts/" + db_name;
+        const std::string loadout_path = "ux0:data/VITAHomebrewSorter/loadouts/" + db_name;
+        
         ret = sqlite3_open_v2(loadout_path.c_str(), &db, SQLITE_OPEN_READWRITE, nullptr);
         if (ret != SQLITE_OK) {
             Log::Error("sqlite3_open_v2 failed to open %s\n", loadout_path.c_str());
