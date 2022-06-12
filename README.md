@@ -27,5 +27,5 @@ Recent versions of vitaGL require libshacccg.suprx to be installed. If you don't
 - Rinnegatamante for [imgui-vita](https://github.com/Rinnegatamante/imgui-vita) (Based on imgui-vita with touch code removed + controller changes and official font usage)
 - ocornut and contributors for [upstream imgui](https://github.com/ocornut/imgui)
 - [vitasdk](https://github.com/vitasdk)
-- VitaSmith for [libsqlite](https://github.com/VitaSmith/libsqlite) which sqlite.cpp is based on.
+- [SQLite3](https://www.sqlite.org/download.html)
 - PreetiSketch for the LiveArea assets
