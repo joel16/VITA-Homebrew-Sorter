@@ -42,17 +42,6 @@ namespace GUI {
         StateError
     };
 
-    enum SortBy {
-        SortTitle,
-        SortTitleID
-    };
-
-    enum SortFolders {
-        SortBoth,
-        SortAppsOnly,
-        SortFoldersOnly
-    };
-
     enum SortMode {
         SortDefault,
         SortAsc,
@@ -543,9 +532,9 @@ namespace GUI {
             if (ImGui::Begin("VITA Homebrew Sorter", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
                 if (ImGui::BeginTabBar("VITA Homebrew Sorter tabs")) {
                     GUI::SortTab(entries, state);
-                    GUI::DisableButtonInit(cfg.beta_features? false : true);
+                    GUI::DisableButtonInit(!cfg.beta_features);
                     GUI::LoadoutsTab(loadouts, state, date_format, loadout_name);
-                    GUI::DisableButtonExit(cfg.beta_features? false : true);
+                    GUI::DisableButtonExit(!cfg.beta_features);
                     GUI::SettingsTab();
                     ImGui::EndTabBar();
                 }

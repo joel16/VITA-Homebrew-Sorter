@@ -10,6 +10,17 @@ typedef struct {
 
 extern config_t cfg;
 
+enum SortBy {
+    SortTitle,
+    SortTitleID
+};
+
+enum SortFolders {
+    SortBoth,
+    SortAppsOnly,
+    SortFoldersOnly
+};
+
 namespace Config {
     int Save(config_t &config);
     int Load(void);
