@@ -35,8 +35,7 @@ namespace Log {
         std::string error_string = "[ERROR] ";
         error_string.append(buf);
         
-        sceClibPrintf("%s", error_string.c_str());
-        printf("%s", error_string.c_str());
+        sceClibPrintf("%s\n", error_string.c_str());
 
         if (R_FAILED(sceIoWrite(log_file, error_string.data(), error_string.length())))
             return;
