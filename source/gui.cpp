@@ -33,7 +33,8 @@ namespace Renderer {
 namespace GUI {
     enum State {
         StateNone,
-        StateConfirm,
+        StateConfirmSort,
+        StateConfirmSwap,
         StateRestore,
         StateLoadoutRestore,
         StateWarning,
@@ -59,6 +60,7 @@ namespace GUI {
     static const ImVec2 tex_size = ImVec2(20, 20);
     static const char *sort_by[] = {"Title", "Title ID"};
     static const char *sort_folders[] = {"Both", "Apps only", "Folders only"};
+    static int old_page_id = -1;
 
     static void SetupPopup(const char *id) {
         ImGui::OpenPopup(id);
@@ -96,16 +98,21 @@ namespace GUI {
         }
     }
 
-    static void Prompt(State &state, std::vector<AppInfoIcon> &entries, std::vector<SceIoDirent> &loadouts, const std::string &db_name) {
+    static void Prompt(State &state, AppEntries &entries, std::vector<SceIoDirent> &loadouts, const std::string &db_name) {
         if (state == StateNone)
             return;
         
         std::string title, prompt;
 
         switch (state) {
-            case StateConfirm:
+            case StateConfirmSort:
                 title = "Confirm";
                 prompt = "Are you sure you want to apply this sorting method? This may take a minute.";
+                break;
+
+            case StateConfirmSwap:
+                title = "Confirm";
+                prompt = "Are you sure you want to apply this change?";
                 break;
 
             case StateRestore:
@@ -147,7 +154,7 @@ namespace GUI {
         if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text(prompt.c_str());
 
-            if ((state == StateConfirm) || (state == StateRestore) || (state == StateLoadoutRestore)) {
+            if ((state == StateConfirmSort) || (state == StateRestore) || (state == StateLoadoutRestore)) {
                 ImGui::Dummy(ImVec2(0.0f, 5.0f));
                 ImGui::Text("You must reboot your device for the changes to take effect.");
             }
@@ -160,10 +167,19 @@ namespace GUI {
 
             if (ImGui::Button("Ok", ImVec2(120, 0))) {
                 switch (state) {
-                    case StateConfirm:
+                    case StateConfirmSort:
                         AppList::Backup();
                         backupExists = true;
-                        if ((AppList::Save(entries)) == 0)
+                        if ((AppList::Save(entries.icons)) == 0)
+                            state = StateDone;
+                        else
+                            state = StateError;
+                        break;
+
+                    case StateConfirmSwap:
+                        AppList::Backup();
+                        backupExists = true;
+                        if ((AppList::SavePages(entries.pages)) == 0)
                             state = StateDone;
                         else
                             state = StateError;
@@ -300,16 +316,16 @@ namespace GUI {
             ImGui::SameLine();
             
             GUI::DisableButtonInit(cfg.sort_mode == SortDefault);
-            if (ImGui::Button("Apply Sort"))
-                state = StateConfirm;
+            if (ImGui::Button("Apply Sort", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0.0f)))
+                state = StateConfirmSort;
             GUI::DisableButtonExit(cfg.sort_mode == SortDefault);
+
+            ImGui::SameLine();
             
-            if (backupExists) {
-                ImGui::SameLine();
-                
-                if (ImGui::Button("Restore Backup"))
-                    state = StateRestore;
-            }
+            GUI::DisableButtonInit(!backupExists);
+            if (ImGui::Button("Restore Backup", ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f)))
+                state = StateRestore;
+            GUI::DisableButtonExit(!backupExists);
             
             ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
             
@@ -401,6 +417,68 @@ namespace GUI {
         }
     }
 
+    static void PagesTab(AppEntries &entries, State &state) {
+        ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter;
+        
+        if (ImGui::BeginTabItem("Pages")) {
+            ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
+            
+            if (ImGui::Button("Reset", ImVec2(ImGui::GetContentRegionAvail().x * 0.33f, 0.0f))) {
+                AppList::Get(entries);
+                old_page_id = -1;
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Apply Changes", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0.0f)))
+                state = StateConfirmSwap;
+
+            ImGui::SameLine();
+
+            GUI::DisableButtonInit(!backupExists);
+            if (ImGui::Button("Restore Backup", ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f)))
+                state = StateRestore;
+            GUI::DisableButtonExit(!backupExists);
+            
+            ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
+            
+            if (ImGui::BeginTable("PagesList", 3, tableFlags)) {
+                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableSetupColumn("pageId");
+                ImGui::TableSetupColumn("pageNo");
+                ImGui::TableHeadersRow();
+                
+                for (unsigned int i = 0; i < entries.pages.size(); i++) {
+                    ImGui::TableNextRow();
+                    
+                    ImGui::TableNextColumn();
+                    ImGui::Image(reinterpret_cast<ImTextureID>(icons[DB].id), tex_size);
+                    
+                    ImGui::TableNextColumn();
+                    ImGui::Text("%d", entries.pages[i].pageId);
+
+                    ImGui::TableNextColumn();
+                    std::string pageNo = std::to_string(entries.pages[i].pageNo);
+                    const bool is_selected = (old_page_id == static_cast<int>(i));
+                    if (ImGui::Selectable(pageNo.c_str(), is_selected)) {
+                        if (old_page_id == -1)
+                            old_page_id = i;
+                        else {
+                            int temp = entries.pages[i].pageNo;
+                            entries.pages[i].pageNo = entries.pages[old_page_id].pageNo;
+                            entries.pages[old_page_id].pageNo = temp;
+                            old_page_id = -1;
+                        }
+                    }
+                }
+
+                ImGui::EndTable();
+            }
+
+            ImGui::EndTabItem();
+        }
+    }
+
     static void LoadoutsTab(std::vector<SceIoDirent> &loadouts, State &state, int &date_format, std::string &loadout_name) {
         ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter |
             ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY;
@@ -408,9 +486,9 @@ namespace GUI {
         if (ImGui::BeginTabItem("Loadouts")) {
             ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
             
-            if (ImGui::Button("Backup current loadout")) {
+            if (ImGui::Button("Backup current loadout", ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f))) {
                 if (R_SUCCEEDED(Loadouts::Backup()))
-                FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
+                    FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
             }
             
             ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
@@ -515,11 +593,15 @@ namespace GUI {
     int RenderLoop(void) {
         bool done = false;
         backupExists = (FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db") || FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db.bkp"));
+        
         AppEntries entries;
         std::vector<SceIoDirent> loadouts;
+        
         AppList::Get(entries);
         FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
+        
         int date_format = Utils::GetDateFormat();
+        
         std::string loadout_name;
         State state = StateNone;
         SceCtrlData pad = { 0 };
@@ -532,6 +614,7 @@ namespace GUI {
             if (ImGui::Begin("VITA Homebrew Sorter", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
                 if (ImGui::BeginTabBar("VITA Homebrew Sorter tabs")) {
                     GUI::SortTab(entries, state);
+                    GUI::PagesTab(entries, state);
                     GUI::DisableButtonInit(!cfg.beta_features);
                     GUI::LoadoutsTab(loadouts, state, date_format, loadout_name);
                     GUI::DisableButtonExit(!cfg.beta_features);
@@ -541,7 +624,7 @@ namespace GUI {
             }
 
             GUI::ExitWindow();
-            GUI::Prompt(state, entries.icons, loadouts, loadout_name.c_str());
+            GUI::Prompt(state, entries, loadouts, loadout_name.c_str());
             Renderer::End(true, ImVec4(0.45f, 0.55f, 0.60f, 1.00f));
 
             pad = Utils::ReadControls();

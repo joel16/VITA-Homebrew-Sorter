@@ -43,6 +43,7 @@ struct AppEntries {
 namespace AppList {
     int Get(AppEntries &entries);
     int Save(std::vector<AppInfoIcon> &entries);
+    int SavePages(std::vector<AppInfoPage> &entries);
     bool SortAppAsc(const AppInfoIcon &entryA, const AppInfoIcon &entryB);
     bool SortAppDesc(const AppInfoIcon &entryA, const AppInfoIcon &entryB);
     bool SortChildAppAsc(const AppInfoChild &entryA, const AppInfoChild &entryB);

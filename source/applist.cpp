@@ -205,6 +205,87 @@ namespace AppList {
         return 0;
     }
 
+    int SavePages(std::vector<AppInfoPage> &entries) {
+        int ret = 0;
+        sqlite3 *db = nullptr;
+        char *error = nullptr;
+        char db_path_backup[] = "ur0:shell/db/app.db.sort.bkp";
+        
+        if (R_FAILED(ret = FS::CopyFile(db_path, db_path_backup)))
+            return ret;
+
+        ret = sqlite3_open_v2(db_path, &db, SQLITE_OPEN_READWRITE, nullptr);
+        if (ret != SQLITE_OK) {
+            Log::Error("sqlite3_open_v2 failed to open %s\n", db_path);
+            FS::RemoveFile(db_path);
+            return ret;
+        }
+
+        // Lock power and prevent auto suspend.
+        Power::Lock();
+
+        const char *prepare_query[] = {
+            "BEGIN TRANSACTION",
+            "PRAGMA foreign_keys = off",
+            "DROP TABLE IF EXISTS tbl_appinfo_page_sort",
+            "CREATE TABLE tbl_appinfo_page_sort AS SELECT * FROM tbl_appinfo_page"
+        };
+        
+        for (int i = 0; i < 4; ++i) {
+            ret = sqlite3_exec(db, prepare_query[i], nullptr, nullptr, &error);
+            if (ret != SQLITE_OK) {
+                AppList::Error(prepare_query[i], error, db, db_path);
+                return ret;
+            }
+        }
+
+        // Update tbl_appinfo_page_sort with swapped pages
+        for (unsigned int i = 0; i < entries.size(); i++) {
+            std::string query = std::string("UPDATE tbl_appinfo_page_sort ")
+                + "SET pageNo = " + std::to_string(entries[i].pageNo) + " WHERE pageId = "
+                + std::to_string(entries[i].pageId) + ";";
+
+            ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
+            if (ret != SQLITE_OK) {
+                AppList::Error(query, error, db, db_path);
+
+                // If sorting fails, drop tbl_appinfo_page_sort.
+                query = std::string("DROP TABLE IF EXISTS tbl_appinfo_page_sort");
+                int ret_next = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
+                if (ret_next != SQLITE_OK) {
+                    AppList::Error(query, error, db, db_path);
+                    return ret_next;
+                }
+
+                return ret;
+            }
+        }
+
+        const char *finish_query[] = {
+            "DROP TABLE tbl_appinfo_page",
+            "CREATE TABLE tbl_appinfo_page(pageId INTEGER PRIMARY KEY NOT NULL, pageNo INT NOT NULL, themeFile TEXT, bgColor INT, texWidth INT, texHeight INT, imageWidth INT, imageHeight INT, reserved01, reserved02, reserved03, reserved04, reserved05)",
+            "CREATE INDEX idx_page_no ON tbl_appinfo_page ( pageNo )",
+            "INSERT INTO tbl_appinfo_page SELECT * FROM tbl_appinfo_page_sort",
+            "DROP TABLE tbl_appinfo_page_sort",
+            "CREATE TRIGGER tgr_deletePage2 AFTER DELETE ON tbl_appinfo_page WHEN OLD.pageNo >= 0 BEGIN UPDATE tbl_appinfo_page SET pageNo = pageNo - 1 WHERE tbl_appinfo_page.pageNo > OLD.pageNo; END",
+            "CREATE TRIGGER tgr_insertPage2 BEFORE INSERT ON tbl_appinfo_page WHEN NEW.pageNo >= 0 BEGIN UPDATE tbl_appinfo_page SET pageNo = pageNo + 1 WHERE tbl_appinfo_page.pageNo >= NEW.pageNo; END",
+            "PRAGMA foreign_keys = on",
+            "COMMIT"
+        };
+
+        for (int i = 0; i < 9; ++i) {
+            ret = sqlite3_exec(db, finish_query[i], nullptr, nullptr, &error);
+            if (ret != SQLITE_OK) {
+                AppList::Error(finish_query[i], error, db, db_path);
+                return ret;
+            }
+        }
+
+        Power::Unlock();
+        sqlite3_close(db);
+        return 0;
+    }
+
     bool SortAppAsc(const AppInfoIcon &entryA, const AppInfoIcon &entryB) {
         std::string entryAname = cfg.sort_by == SortTitle? entryA.title : entryA.titleId;
         std::string entryBname = cfg.sort_by == SortTitle? entryB.title : entryB.titleId;
