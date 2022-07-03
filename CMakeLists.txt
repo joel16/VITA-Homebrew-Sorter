@@ -13,7 +13,7 @@ include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 set(VITA_APP_NAME "VITA Homebrew Sorter")
 set(VITA_TITLEID "VITAHBSRT")
-set(VITA_VERSION "01.25")
+set(VITA_VERSION "01.26")
 
 add_definitions(-DAPP_VERSION="${VITA_VERSION}")
 add_definitions(
