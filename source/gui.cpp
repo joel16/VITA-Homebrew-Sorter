@@ -53,6 +53,7 @@ namespace GUI {
         App,
         DB,
         Folder,
+        Page,
         Trash
     };
 
@@ -452,7 +453,7 @@ namespace GUI {
                     ImGui::TableNextRow();
                     
                     ImGui::TableNextColumn();
-                    ImGui::Image(reinterpret_cast<ImTextureID>(icons[DB].id), tex_size);
+                    ImGui::Image(reinterpret_cast<ImTextureID>(icons[Page].id), tex_size);
                     
                     ImGui::TableNextColumn();
                     ImGui::Text("%d", entries.pages[i].pageId);
