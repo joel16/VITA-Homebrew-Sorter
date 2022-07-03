@@ -104,5 +104,7 @@ vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
     FILE res/db.png res/db.png
     FILE res/folder.png res/folder.png
     FILE res/page.png res/page.png
+    FILE res/checked.png res/checked.png
+    FILE res/unchecked.png res/unchecked.png
     FILE res/trash.png res/trash.png
 )

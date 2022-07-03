@@ -10,7 +10,7 @@
 std::vector<Tex> icons;
 
 namespace Textures {
-    constexpr int max_textures = 5;
+    constexpr int max_textures = 7;
 
     static bool Create(unsigned char *data, GLint format, Tex &texture) {    
         // Create a OpenGL texture identifier
@@ -61,6 +61,8 @@ namespace Textures {
             "app0:res/db.png",
             "app0:res/folder.png",
             "app0:res/page.png",
+            "app0:res/checked.png",
+            "app0:res/unchecked.png",
             "app0:res/trash.png"
         };
 

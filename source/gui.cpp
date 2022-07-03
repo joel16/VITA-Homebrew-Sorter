@@ -469,6 +469,7 @@ namespace GUI {
                             entries.pages[i].pageNo = entries.pages[old_page_id].pageNo;
                             entries.pages[old_page_id].pageNo = temp;
                             old_page_id = -1;
+                            ImGui::ClearActiveID();
                         }
                     }
                 }
