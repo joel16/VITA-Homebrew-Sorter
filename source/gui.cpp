@@ -171,8 +171,10 @@ namespace GUI {
                     case StateConfirmSort:
                         AppList::Backup();
                         backupExists = true;
-                        if ((AppList::Save(entries.icons)) == 0)
+                        if ((AppList::Save(entries.icons)) == 0) {
+                            Config::Save(cfg);
                             state = StateDone;
+                        }
                         else
                             state = StateError;
                         break;
@@ -599,7 +601,11 @@ namespace GUI {
         AppEntries entries;
         std::vector<SceIoDirent> loadouts;
         
+        // Initial sort based on cfg.sort_mode
         AppList::Get(entries);
+        std::sort(entries.icons.begin(), entries.icons.end(), cfg.sort_mode == SortAsc? AppList::SortAppDesc : AppList::SortAppDesc);
+        std::sort(entries.child_apps.begin(), entries.child_apps.end(), cfg.sort_mode == SortAsc? AppList::SortChildAppDesc : AppList::SortChildAppDesc);
+        
         FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
         
         int date_format = Utils::GetDateFormat();
