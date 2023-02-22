@@ -14,10 +14,10 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt-get -y update
-        sudo apt-get -y install make git cmake python
+        sudo apt-get -y install make git cmake python3
           
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: recursive
 
@@ -37,7 +37,7 @@ jobs:
         mkdir build && cd build && cmake ..
         make
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: VITA-Homebrew-Sorter.vpk
         path: build/VITA-Homebrew-Sorter.vpk
