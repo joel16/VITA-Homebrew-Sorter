@@ -526,7 +526,7 @@ namespace GUI {
 
                         ImGui::TableNextColumn();
                         ImGui::PushID(i);
-                        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(icons[Trash].id), tex_size, ImVec2(0, 0), ImVec2(1, 1), 0)) {
+                        if (ImGui::ImageButton("", reinterpret_cast<ImTextureID>(icons[Trash].id), tex_size, ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f))) {
                             loadout_name = loadouts[i].d_name;
                             state = StateDelete;
                         }

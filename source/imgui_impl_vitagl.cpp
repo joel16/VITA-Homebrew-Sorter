@@ -12,8 +12,6 @@
 #include "imgui_impl_vitagl.h"
 #include "utils.h"
 
-#define GL_COLOR_MATERIAL 0x0B57
-
 #define lerp(value, from_max, to_max) ((((value * 10) * (to_max * 10)) / (from_max * 10)) / 10)
 
 struct ImGui_ImplVitaGL_Data {
@@ -186,7 +184,7 @@ void ImGui_ImplVitaGL_RenderDrawData(ImDrawData *draw_data) {
     GLint last_viewport[4]; glGetIntegerv(GL_VIEWPORT, last_viewport);
     GLint last_scissor_box[4]; glGetIntegerv(GL_SCISSOR_BOX, last_scissor_box);
     //GLint last_shade_model; glGetIntegerv(GL_SHADE_MODEL, &last_shade_model);
-    //GLint last_tex_env_mode; glGetTexEnviv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, &last_tex_env_mode);
+    GLint last_tex_env_mode; glGetTexEnviv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, &last_tex_env_mode);
     glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TRANSFORM_BIT);
     
     // Setup desired GL state
@@ -223,7 +221,7 @@ void ImGui_ImplVitaGL_RenderDrawData(ImDrawData *draw_data) {
                     continue;
                     
                 // Apply scissor/clipping rectangle (Y is inverted in OpenGL)
-                glScissor(static_cast<int>(clip_min.x), static_cast<int>(fb_height - clip_max.y), static_cast<int>(clip_max.x - clip_min.x), static_cast<int>(clip_max.y - clip_min.y));
+                glScissor(static_cast<int>(clip_min.x), static_cast<int>(static_cast<float>(fb_height) - clip_max.y), static_cast<int>(clip_max.x - clip_min.x), static_cast<int>(clip_max.y - clip_min.y));
                 
                 // Bind texture, Draw
                 glBindTexture(GL_TEXTURE_2D, reinterpret_cast<GLuint>(pcmd->GetTexID()));
@@ -246,7 +244,7 @@ void ImGui_ImplVitaGL_RenderDrawData(ImDrawData *draw_data) {
     glViewport(last_viewport[0], last_viewport[1], static_cast<GLsizei>(last_viewport[2]), static_cast<GLsizei>(last_viewport[3]));
     glScissor(last_scissor_box[0], last_scissor_box[1], static_cast<GLsizei>(last_scissor_box[2]), static_cast<GLsizei>(last_scissor_box[3]));
     //glShadeModel(last_shade_model);
-    //glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, last_tex_env_mode);
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, last_tex_env_mode);
 }
 
 bool ImGui_ImplVitaGL_CreateFontsTexture(void) {
@@ -271,7 +269,7 @@ bool ImGui_ImplVitaGL_CreateFontsTexture(void) {
     glBindTexture(GL_TEXTURE_2D, bd->FontTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    //glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
     
     // Store our identifier
