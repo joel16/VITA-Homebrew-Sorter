@@ -7,8 +7,8 @@
 #include "applist.h"
 #include "config.h"
 #include "fs.h"
-#include "imgui_impl_vitagl.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
+#include "imgui_impl_vitagl.h"
 #include "imgui_internal.h"
 #include "loadouts.h"
 #include "sqlite3.h"

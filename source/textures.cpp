@@ -12,7 +12,7 @@ std::vector<Tex> icons;
 namespace Textures {
     constexpr int max_textures = 7;
 
-    static bool Create(unsigned char *data, GLint format, Tex &texture) {    
+    static bool Create(unsigned char *data, GLint format, Tex &texture) {
         // Create a OpenGL texture identifier
         glGenTextures(1, &texture.id);
         glBindTexture(GL_TEXTURE_2D, texture.id);
@@ -22,6 +22,9 @@ namespace Textures {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         
         // Upload pixels into texture
+#if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+#endif
         glTexImage2D(GL_TEXTURE_2D, 0, format, texture.width, texture.height, 0, format, GL_UNSIGNED_BYTE, data);
         return true;
     }
