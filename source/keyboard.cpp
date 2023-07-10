@@ -20,8 +20,9 @@ namespace Keyboard {
     std::string text = std::string();
 
     int Init(const std::string &title) {
-        if (running)
+        if (running) {
             return -1;
+        }
 
         // Clear our text buffer
         text.clear();
@@ -52,10 +53,12 @@ namespace Keyboard {
     }
 
     SceCommonDialogStatus Update(void) {
-        if (!running)
+        if (!running) {
             return SCE_COMMON_DIALOG_STATUS_NONE;
+        }
         
         SceCommonDialogStatus status = sceImeDialogGetStatus();
+        
         if (status == SCE_COMMON_DIALOG_STATUS_FINISHED) {
             SceImeDialogResult result;
             sceClibMemset(&result, 0, sizeof(SceImeDialogResult));
@@ -65,8 +68,9 @@ namespace Keyboard {
                 std::u16string buffer_u16 = reinterpret_cast<char16_t *>(buffer);
                 text = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(buffer_u16.data());
             }
-            else
+            else {
                 status = static_cast<SceCommonDialogStatus>(SCE_COMMON_DIALOG_STATUS_CANCELLED);
+            }
             
             sceImeDialogTerm();
             running = false;
@@ -76,19 +80,24 @@ namespace Keyboard {
     }
 
     std::string GetText(const std::string &title) {
-        if (R_FAILED(Init(title)))
+        if (R_FAILED(Keyboard::Init(title))) {
             return std::string();
+        }
         
         bool done = false;
+
         do {
             glClear(GL_COLOR_BUFFER_BIT);
             glClearColor(0, 0, 0, 1);
 
-            SceCommonDialogStatus status = Update();
-            if (status == SCE_COMMON_DIALOG_STATUS_FINISHED)
+            SceCommonDialogStatus status = Keyboard::Update();
+
+            if (status == SCE_COMMON_DIALOG_STATUS_FINISHED) {
                 done = true;
-            else if (status != SCE_COMMON_DIALOG_STATUS_CANCELLED)
+            }
+            else if (status != SCE_COMMON_DIALOG_STATUS_CANCELLED) {
                 done = false;
+            }
 
             vglSwapBuffers(GL_TRUE);
         } while(!done);

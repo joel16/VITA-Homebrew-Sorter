@@ -116,8 +116,9 @@ namespace AppList {
         char *error = nullptr;
         char db_path_backup[] = "ur0:shell/db/app.db.sort.bkp";
         
-        if (R_FAILED(ret = FS::CopyFile(db_path, db_path_backup)))
+        if (R_FAILED(ret = FS::CopyFile(db_path, db_path_backup))) {
             return ret;
+        }
 
         ret = sqlite3_open_v2(db_path, &db, SQLITE_OPEN_READWRITE, nullptr);
         if (ret != SQLITE_OK) {
@@ -155,14 +156,16 @@ namespace AppList {
 
             if ((title == "(null)") && (titleId == "(null)")) {
                 // Check if power icon on PSTV, otherwise use reserved01.
-                if (entries[i].icon0Type == 8)
+                if (entries[i].icon0Type == 8) {
                     query.append("icon0Type = " + std::to_string(entries[i].icon0Type) + ";");
-                else if (reserved01 != "(null)")
+                }
+                else if (reserved01 != "(null)") {
                     query.append("reserved01 = " + reserved01 + ";");
+                }
             }
             else {
                 query.append((titleId == "(null)"? "title = \"" + title + "\"" : "titleId = \"" + titleId + "\"")
-                + (entries[i].icon0Type == 7? " AND reserved01 = " + reserved01 + ";" : ";"));
+                    + (entries[i].icon0Type == 7? " AND reserved01 = " + reserved01 + ";" : ";"));
             }
 
             ret = sqlite3_exec(db, query.c_str(), nullptr, nullptr, &error);
@@ -211,8 +214,9 @@ namespace AppList {
         char *error = nullptr;
         char db_path_backup[] = "ur0:shell/db/app.db.sort.bkp";
         
-        if (R_FAILED(ret = FS::CopyFile(db_path, db_path_backup)))
+        if (R_FAILED(ret = FS::CopyFile(db_path, db_path_backup))) {
             return ret;
+        }
 
         ret = sqlite3_open_v2(db_path, &db, SQLITE_OPEN_READWRITE, nullptr);
         if (ret != SQLITE_OK) {
@@ -293,8 +297,9 @@ namespace AppList {
         std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
         std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
 
-        if (entryAname.compare(entryBname) < 0)
+        if (entryAname.compare(entryBname) < 0) {
             return true;
+        }
 
         return false;
     }
@@ -306,8 +311,9 @@ namespace AppList {
         std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
         std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
 
-        if (entryBname.compare(entryAname) < 0)
+        if (entryBname.compare(entryAname) < 0) {
             return true;
+        }
 
         return false;
     }
@@ -319,8 +325,9 @@ namespace AppList {
         std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
         std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
 
-        if (entryAname.compare(entryBname) < 0)
+        if (entryAname.compare(entryBname) < 0) {
             return true;
+        }
 
         return false;
     }
@@ -332,8 +339,9 @@ namespace AppList {
         std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
         std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
 
-        if (entryBname.compare(entryAname) < 0)
+        if (entryBname.compare(entryAname) < 0) {
             return true;
+        }
 
         return false;
     }
@@ -369,13 +377,16 @@ namespace AppList {
         int ret = 0;
         std::string backup_path;
         
-        if (!FS::FileExists("ux0:data/VITAHomebrewSorter/backup/app.db.bkp"))
+        if (!FS::FileExists("ux0:data/VITAHomebrewSorter/backup/app.db.bkp")) {
             backup_path = "ux0:data/VITAHomebrewSorter/backup/app.db.bkp";
-        else
+        }
+        else {
             backup_path = "ux0:data/VITAHomebrewSorter/backup/app.db";
+        }
             
-        if (R_FAILED(ret = FS::CopyFile(db_path, backup_path)))
+        if (R_FAILED(ret = FS::CopyFile(db_path, backup_path))) {
             return ret;
+        }
             
         return 0;
     }
@@ -384,13 +395,16 @@ namespace AppList {
         int ret = 0;
         std::string restore_path;
 
-        if (!FS::FileExists("ux0:data/VITAHomebrewSorter/backup/app.db"))
+        if (!FS::FileExists("ux0:data/VITAHomebrewSorter/backup/app.db")) {
             restore_path = "ux0:data/VITAHomebrewSorter/backup/app.db.bkp";
-        else
+        }
+        else {
             restore_path = "ux0:data/VITAHomebrewSorter/backup/app.db";
+        }
 
-        if (R_FAILED(ret = FS::CopyFile(restore_path, db_path)))
+        if (R_FAILED(ret = FS::CopyFile(restore_path, db_path))) {
             return ret;
+        }
         
         return 0;
     }
@@ -450,8 +464,9 @@ namespace AppList {
         sqlite3_finalize(stmt);
         sqlite3_close(db);
 
-        if (app_entries.empty() || loadout_entries.empty())
+        if (app_entries.empty() || loadout_entries.empty()) {
             return false;
+        }
         
         std::set_difference(app_entries.begin(), app_entries.end(), loadout_entries.begin(), loadout_entries.end(),
         std::inserter(diff_entries, diff_entries.begin()));

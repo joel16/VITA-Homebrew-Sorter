@@ -67,6 +67,7 @@ target_link_libraries(${PROJECT_NAME}
     png
     pthread
     lzma
+    bz2
     z
     vitaGL
     vitashark

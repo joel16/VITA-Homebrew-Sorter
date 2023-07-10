@@ -15,19 +15,22 @@ namespace Loadouts {
         int ret = 0;
         std::string filename = Keyboard::GetText("Enter loadout name");
         
-        if (filename.empty())
+        if (filename.empty()) {
             return -1;
+        }
 
         // In the case user adds an extension, remove it.
         filename = Loadouts::StripExt(filename);
         const std::string loadout_path = "ux0:data/VITAHomebrewSorter/loadouts/" + filename + ".db";
         const std::string layout_path = "ux0:data/VITAHomebrewSorter/loadouts/" + filename + ".ini";
 
-        if (R_FAILED(ret = FS::CopyFile(db_path, loadout_path)))
+        if (R_FAILED(ret = FS::CopyFile(db_path, loadout_path))) {
             return ret;
+        }
 
-        if (R_FAILED(ret = FS::CopyFile(ini_path, layout_path)))
+        if (R_FAILED(ret = FS::CopyFile(ini_path, layout_path))) {
             return ret;
+        }
         
         return 0;
     }
@@ -40,11 +43,13 @@ namespace Loadouts {
         const std::string loadout_path = "ux0:data/VITAHomebrewSorter/loadouts/" + raw_filename + ".db";
         const std::string layout_path = "ux0:data/VITAHomebrewSorter/loadouts/" + raw_filename + ".ini";
 
-        if (R_FAILED(ret = FS::CopyFile(loadout_path, db_path)))
+        if (R_FAILED(ret = FS::CopyFile(loadout_path, db_path))) {
             return ret;
+        }
 
-        if (R_FAILED(ret = FS::CopyFile(layout_path, ini_path)))
+        if (R_FAILED(ret = FS::CopyFile(layout_path, ini_path))) {
             return ret;
+        }
         
         return 0;
     }
@@ -57,11 +62,13 @@ namespace Loadouts {
         const std::string loadout_path = "ux0:data/VITAHomebrewSorter/loadouts/" + raw_filename + ".db";
         const std::string layout_path = "ux0:data/VITAHomebrewSorter/loadouts/" + raw_filename + ".ini";
 
-        if (R_FAILED(ret = FS::RemoveFile(loadout_path)))
+        if (R_FAILED(ret = FS::RemoveFile(loadout_path))) {
             return ret;
+        }
 
-        if (R_FAILED(ret = FS::RemoveFile(layout_path)))
+        if (R_FAILED(ret = FS::RemoveFile(layout_path))) {
             return ret;
+        }
         
         return 0;
     }

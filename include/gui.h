@@ -1,8 +1,5 @@
-#ifndef _VITA_HB_SORTER_GUI_H_
-#define _VITA_HB_SORTER_GUI_H_
+#pragma once
 
 namespace GUI {
     int RenderLoop(void);
 }
-
-#endif

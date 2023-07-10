@@ -45,12 +45,14 @@ static int psp2DirectWrite(PSP2File *p, const void *zBuf, int iAmt, sqlite_int64
     int nWrite = 0;                    /* Return value from sceIoWrite() */
     
     ofst = sceIoLseek(p->fd, iOfst, SCE_SEEK_SET);
-    if (ofst != iOfst)
+    if (ofst != iOfst) {
         return SQLITE_IOERR_WRITE;
+    }
         
     nWrite = sceIoWrite(p->fd, zBuf, iAmt);
-    if (nWrite != iAmt)
+    if (nWrite != iAmt) {
         return SQLITE_IOERR_WRITE;
+    }
         
     return SQLITE_OK;
 }
@@ -99,20 +101,24 @@ static int psp2Read(sqlite3_file *pFile, void *zBuf, int iAmt, sqlite_int64 iOfs
     ** a journal file when there is data cached in the write-buffer.
     */
     rc = psp2FlushBuffer(p);
-    if (rc != SQLITE_OK)
+    if (rc != SQLITE_OK) {
         return rc;
+    }
     
     ofst = sceIoLseek(p->fd, iOfst, SCE_SEEK_SET);
-    if (ofst != iOfst)
+    if (ofst != iOfst) {
         return SQLITE_IOERR_READ;
+    }
         
     nRead = sceIoRead(p->fd, zBuf, iAmt);
     
-    if (nRead == iAmt)
+    if (nRead == iAmt) {
         return SQLITE_OK;
+    }
     else if (nRead >= 0) {
-        if (nRead < iAmt)
+        if (nRead < iAmt) {
             sceClibMemset(&(static_cast<char*>(zBuf))[nRead], 0, iAmt-nRead);
+        }
         
         return SQLITE_IOERR_SHORT_READ;
     }
@@ -140,8 +146,9 @@ static int psp2Write(sqlite3_file *pFile, const void *zBuf, int iAmt, sqlite_int
             */
             if (p->nBuffer == SQLITE_PSP2VFS_BUFFERSZ || p->iBufferOfst+p->nBuffer != i) {
                 int rc = psp2FlushBuffer(p);
-                if (rc != SQLITE_OK)
+                if (rc != SQLITE_OK) {
                     return rc;
+                }
             }
             
             assert(p->nBuffer == 0 || p->iBufferOfst+p->nBuffer == i);
@@ -149,8 +156,9 @@ static int psp2Write(sqlite3_file *pFile, const void *zBuf, int iAmt, sqlite_int
             
             /* Copy as much data as possible into the buffer. */
             nCopy = SQLITE_PSP2VFS_BUFFERSZ - p->nBuffer;
-            if (nCopy > n)
+            if (nCopy > n) {
                 nCopy = n;
+            }
                 
             sceClibMemcpy(&p->aBuffer[p->nBuffer], z, nCopy);
             p->nBuffer += nCopy;
@@ -160,8 +168,9 @@ static int psp2Write(sqlite3_file *pFile, const void *zBuf, int iAmt, sqlite_int
             z += nCopy;
         }
     }
-    else
+    else {
         return psp2DirectWrite(p, zBuf, iAmt, iOfst);
+    }
         
     return SQLITE_OK;
 }
@@ -182,8 +191,9 @@ static int psp2Sync(sqlite3_file *pFile, int flags) {
     int rc = 0;
     
     rc = psp2FlushBuffer(p);
-    if (rc != SQLITE_OK)
+    if (rc != SQLITE_OK) {
         return rc;
+    }
     
     rc = sceIoSyncByFd(p->fd, 0);
     return (rc == 0? SQLITE_OK : SQLITE_IOERR_FSYNC);
@@ -203,13 +213,15 @@ static int psp2FileSize(sqlite3_file *pFile, sqlite_int64 *pSize) {
     ** not worth the trouble.
     */
     rc = psp2FlushBuffer(p);
-    if (rc != SQLITE_OK)
+    if (rc != SQLITE_OK) {
         return rc;
+    }
         
     rc = sceIoGetstatByFd(p->fd, &sStat);
     
-    if (rc != 0)
+    if (rc != 0) {
         return SQLITE_IOERR_FSTAT;
+    }
         
     *pSize = sStat.st_size;
     return SQLITE_OK;
@@ -278,29 +290,36 @@ static int psp2Open(sqlite3_vfs *pVfs, const char *zName, sqlite3_file *pFile, i
     int oflags = 0;                                   /* flags to pass to open() call */
     char *aBuf = 0;
 
-    if (zName == 0)
+    if (zName == 0) {
         return SQLITE_IOERR;
+    }
         
     if (flags & SQLITE_OPEN_MAIN_JOURNAL) {
         aBuf = reinterpret_cast<char*>(sqlite3_malloc(SQLITE_PSP2VFS_BUFFERSZ));
 
-        if (!aBuf)
+        if (!aBuf) {
             return SQLITE_NOMEM;
+        }
     }
     
-    if (flags & SQLITE_OPEN_EXCLUSIVE)
+    if (flags & SQLITE_OPEN_EXCLUSIVE) {
         oflags |= SCE_O_EXCL;
-    if (flags & SQLITE_OPEN_CREATE)
+    }
+    if (flags & SQLITE_OPEN_CREATE) {
         oflags |= SCE_O_CREAT;
-    if (flags & SQLITE_OPEN_READONLY)
+    }
+    if (flags & SQLITE_OPEN_READONLY) {
         oflags |= SCE_O_RDONLY;
-    if (flags & SQLITE_OPEN_READWRITE)
+    }
+    if (flags & SQLITE_OPEN_READWRITE) {
         oflags |= SCE_O_RDWR;
+    }
         
     // TODO(xyz): sqlite tries to open inexistant journal and then tries to read from it, wtf?
     // so force O_CREAT here
-    if (flags & SQLITE_OPEN_MAIN_JOURNAL && !(flags & SQLITE_OPEN_EXCLUSIVE))
+    if (flags & SQLITE_OPEN_MAIN_JOURNAL && !(flags & SQLITE_OPEN_EXCLUSIVE)) {
         oflags |= SCE_O_CREAT;
+    }
     
     sceClibMemset(p, 0, sizeof(PSP2File));
     p->fd = sceIoOpen(zName, oflags, 7);
@@ -312,8 +331,9 @@ static int psp2Open(sqlite3_vfs *pVfs, const char *zName, sqlite3_file *pFile, i
     
     p->aBuffer = aBuf;
     
-    if (pOutFlags)
+    if (pOutFlags) {
         *pOutFlags = flags;
+    }
     
     p->base.pMethods = &psp2io;
     return SQLITE_OK;
@@ -512,8 +532,9 @@ sqlite3_vfs *sqlite3_psp2vfs(void) {
 }
 
 int sqlite3_os_init(void) {
-    if (sqlite3_vfs_register(sqlite3_psp2vfs(), 1) != SQLITE_OK)
+    if (sqlite3_vfs_register(sqlite3_psp2vfs(), 1) != SQLITE_OK) {
         return -1;
+    }
         
     return 0;
 }

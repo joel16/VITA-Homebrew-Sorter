@@ -88,11 +88,13 @@ namespace Services {
 		
 		sceSysmoduleLoadModule(SCE_SYSMODULE_JSON);
 
-		if (!FS::DirExists("ux0:data/VITAHomebrewSorter/backup"))
+		if (!FS::DirExists("ux0:data/VITAHomebrewSorter/backup")) {
 			FS::MakeDir("ux0:data/VITAHomebrewSorter/backup");
+		}
 
-		if (!FS::DirExists("ux0:data/VITAHomebrewSorter/loadouts"))
+		if (!FS::DirExists("ux0:data/VITAHomebrewSorter/loadouts")) {
 			FS::MakeDir("ux0:data/VITAHomebrewSorter/loadouts");
+		}
 		
 		Log::Init();
 		Textures::Init();

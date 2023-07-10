@@ -1,5 +1,4 @@
-#ifndef _VITA_HB_SORTER_TEXTURES_H_
-#define _VITA_HB_SORTER_TEXTURES_H_
+#pragma once
 
 #include <vitaGL.h>
 #include <vector>
@@ -16,5 +15,3 @@ namespace Textures {
     bool Init(void);
     void Exit(void);
 }
-
-#endif

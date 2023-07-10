@@ -61,8 +61,9 @@ namespace FS {
             current_level += level; // append folder to the current level
             
             // create current level
-            if (!FS::DirExists(current_level) && sceIoMkdir(current_level.c_str(), 0777) != 0)
+            if (!FS::DirExists(current_level) && sceIoMkdir(current_level.c_str(), 0777) != 0) {
                 return -1;
+            }
                 
             current_level += "/"; // don't forget to append a slash
         }
@@ -144,12 +145,14 @@ namespace FS {
         unsigned char *data = nullptr;
         SceOff size = 0;
 
-        if (R_FAILED(ret = FS::GetFileSize(src_path, size)))
+        if (R_FAILED(ret = FS::GetFileSize(src_path, size))) {
             return ret;
+        }
 
         data = new unsigned char[size];
-        if (!data)
+        if (!data) {
             return -1;
+        }
         
         if (R_FAILED(ret = FS::ReadFile(src_path, data, size))) {
             delete[] data;
@@ -181,25 +184,29 @@ namespace FS {
     static bool IsDBFile(const std::string &filename) {
         std::string ext = FS::GetFileExt(filename);
         
-        if (!ext.compare(".DB"))
+        if (!ext.compare(".DB")) {
             return true;
+        }
             
         return false;
     }
 
     static bool Sort(const SceIoDirent &entryA, const SceIoDirent &entryB) {
-        if ((SCE_S_ISDIR(entryA.d_stat.st_mode)) && !(SCE_S_ISDIR(entryB.d_stat.st_mode)))
+        if ((SCE_S_ISDIR(entryA.d_stat.st_mode)) && !(SCE_S_ISDIR(entryB.d_stat.st_mode))) {
             return true;
-        else if (!(SCE_S_ISDIR(entryA.d_stat.st_mode)) && (SCE_S_ISDIR(entryB.d_stat.st_mode)))
+        }
+        else if (!(SCE_S_ISDIR(entryA.d_stat.st_mode)) && (SCE_S_ISDIR(entryB.d_stat.st_mode))) {
             return false;
+        }
         else {
             std::u16string entryA_name = reinterpret_cast<const char16_t *>(entryA.d_name);
             std::u16string entryB_name = reinterpret_cast<const char16_t *>(entryB.d_name);
             std::transform(entryA_name.begin(), entryA_name.end(), entryA_name.begin(), [](unsigned char c){ return std::tolower(c); });
             std::transform(entryB_name.begin(), entryB_name.end(), entryB_name.begin(), [](unsigned char c){ return std::tolower(c); });
 
-            if (entryA_name.compare(entryB_name) < 0)
+            if (entryA_name.compare(entryB_name) < 0) {
                 return true;
+            }
         }
         
         return false;
@@ -221,11 +228,13 @@ namespace FS {
             ret = sceIoDread(dir, &entry);
             
             if (ret > 0) {
-                if (!FS::IsDBFile(entry.d_name))
+                if (!FS::IsDBFile(entry.d_name)) {
                     continue;
+                }
                     
-                if (SCE_S_ISDIR(entry.d_stat.st_mode))
+                if (SCE_S_ISDIR(entry.d_stat.st_mode)) {
                     continue;
+                }
                 
                 entries.push_back(entry);
             }

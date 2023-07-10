@@ -1,5 +1,4 @@
-#ifndef _VITA_HB_SORTER_UTILS_H_
-#define _VITA_HB_SORTER_UTILS_H_
+#pragma once
 
 #include <psp2/ctrl.h>
 #include <psp2/system_param.h>
@@ -24,5 +23,3 @@ namespace Utils {
     int GetDateFormat(void);
     void GetDateString(char string[24], SceSystemParamDateFormat format, SceDateTime &time);
 }
-
-#endif

@@ -175,17 +175,20 @@ namespace GUI {
                             Config::Save(cfg);
                             state = StateDone;
                         }
-                        else
+                        else {
                             state = StateError;
+                        }
                         break;
 
                     case StateConfirmSwap:
                         AppList::Backup();
                         backupExists = true;
-                        if ((AppList::SavePages(entries.pages)) == 0)
+                        if ((AppList::SavePages(entries.pages)) == 0) {
                             state = StateDone;
-                        else
+                        }
+                        else {
                             state = StateError;
+                        }
                         break;
 
                     case StateRestore:
@@ -258,8 +261,9 @@ namespace GUI {
                         Config::Save(cfg);
                     }
 
-                    if (is_selected)
+                    if (is_selected) {
                         ImGui::SetItemDefaultFocus();
+                    }
                 }
 
                 ImGui::EndCombo();
@@ -280,8 +284,9 @@ namespace GUI {
                         Config::Save(cfg);
                     }
                         
-                    if (is_selected)
+                    if (is_selected) {
                         ImGui::SetItemDefaultFocus();
+                    }
                 }
 
                 ImGui::EndCombo();
@@ -319,15 +324,17 @@ namespace GUI {
             ImGui::SameLine();
             
             GUI::DisableButtonInit(cfg.sort_mode == SortDefault);
-            if (ImGui::Button("Apply Sort", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0.0f)))
+            if (ImGui::Button("Apply Sort", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0.0f))) {
                 state = StateConfirmSort;
+            }
             GUI::DisableButtonExit(cfg.sort_mode == SortDefault);
 
             ImGui::SameLine();
             
             GUI::DisableButtonInit(!backupExists);
-            if (ImGui::Button("Restore Backup", ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f)))
+            if (ImGui::Button("Restore Backup", ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f))) {
                 state = StateRestore;
+            }
             GUI::DisableButtonExit(!backupExists);
             
             ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
@@ -433,14 +440,16 @@ namespace GUI {
 
             ImGui::SameLine();
 
-            if (ImGui::Button("Apply Changes", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0.0f)))
+            if (ImGui::Button("Apply Changes", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0.0f))) {
                 state = StateConfirmSwap;
+            }
 
             ImGui::SameLine();
 
             GUI::DisableButtonInit(!backupExists);
-            if (ImGui::Button("Restore Backup", ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f)))
+            if (ImGui::Button("Restore Backup", ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f))) {
                 state = StateRestore;
+            }
             GUI::DisableButtonExit(!backupExists);
             
             ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
@@ -464,8 +473,9 @@ namespace GUI {
                     std::string pageNo = std::to_string(entries.pages[i].pageNo);
                     const bool is_selected = (old_page_id == static_cast<int>(i));
                     if (ImGui::Selectable(pageNo.c_str(), is_selected)) {
-                        if (old_page_id == -1)
+                        if (old_page_id == -1) {
                             old_page_id = i;
+                        }
                         else {
                             int temp = entries.pages[i].pageNo;
                             entries.pages[i].pageNo = entries.pages[old_page_id].pageNo;
@@ -491,15 +501,17 @@ namespace GUI {
             ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
             
             if (ImGui::Button("Backup current loadout", ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f))) {
-                if (R_SUCCEEDED(Loadouts::Backup()))
+                if (R_SUCCEEDED(Loadouts::Backup())) {
                     FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
+                }
             }
             
             ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
             
             if (ImGui::BeginTable("LoadoutList", 4, tableFlags)) {
-                if (loadouts.empty())
+                if (loadouts.empty()) {
                     ImGui::Text("No loadouts found");
+                }
                 else {
                     ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
                     ImGui::TableSetupColumn("Title");
@@ -637,8 +649,9 @@ namespace GUI {
 
             pad = Utils::ReadControls();
 
-            if (pressed & SCE_CTRL_START)
+            if (pressed & SCE_CTRL_START) {
                 done = true;
+            }
         }
 
         return 0;

@@ -1,5 +1,4 @@
-#ifndef _VITA_HB_SORTER_FS_H_
-#define _VITA_HB_SORTER_FS_H_
+#pragma once
 
 #include <psp2/io/dirent.h>
 #include <psp2/types.h>
@@ -17,5 +16,3 @@ namespace FS {
     std::string GetFileExt(const std::string &filename);
     int GetDirList(const std::string &path, std::vector<SceIoDirent> &entries);
 }
-
-#endif

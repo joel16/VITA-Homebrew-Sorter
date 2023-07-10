@@ -50,8 +50,9 @@ namespace Textures {
                 png_image_free(&image);
             }
         }
-        else
+        else {
             Log::Error("png_image_begin_read_from_memory failed: %s\n", image.message);
+        }
         
         return ret;
     }

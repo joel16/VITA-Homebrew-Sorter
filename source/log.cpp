@@ -13,16 +13,19 @@ namespace Log {
     void Init(void) {
         const std::string path = "ux0:data/VITAHomebrewSorter/debug.log";
         
-        if (!FS::FileExists(path))
+        if (!FS::FileExists(path)) {
             FS::CreateFile(path);
+        }
             
-        if (R_FAILED(log_file = sceIoOpen(path.c_str(), SCE_O_WRONLY | SCE_O_APPEND, 0)))
+        if (R_FAILED(log_file = sceIoOpen(path.c_str(), SCE_O_WRONLY | SCE_O_APPEND, 0))) {
             return;
+        }
     }
 
     void Exit(void) {
-        if (R_FAILED(sceIoClose(log_file)))
+        if (R_FAILED(sceIoClose(log_file))) {
             return;
+        }
     }
     
     void Error(const char *data, ...) {
@@ -37,7 +40,8 @@ namespace Log {
         
         sceClibPrintf("%s\n", error_string.c_str());
 
-        if (R_FAILED(sceIoWrite(log_file, error_string.data(), error_string.length())))
+        if (R_FAILED(sceIoWrite(log_file, error_string.data(), error_string.length()))) {
             return;
+        }
     }
 }

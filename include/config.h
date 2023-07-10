@@ -1,5 +1,4 @@
-#ifndef _VITA_HB_SORTER_CONFIG_H_
-#define _VITA_HB_SORTER_CONFIG_H_
+#pragma once
 
 typedef struct {
     bool beta_features = false;
@@ -25,5 +24,3 @@ namespace Config {
     int Save(config_t &config);
     int Load(void);
 }
-
-#endif

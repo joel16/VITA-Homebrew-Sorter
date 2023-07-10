@@ -39,8 +39,9 @@ namespace Config {
         SceSize len = sceClibSnprintf(buffer.get(), 128, config_file, config.beta_features? "true" : "false",
             config.sort_by, config.sort_folders, config.sort_mode, CONFIG_VERSION);
         
-        if (R_FAILED(ret = FS::WriteFile(config_path, buffer.get(), len)))
+        if (R_FAILED(ret = FS::WriteFile(config_path, buffer.get(), len))) {
             return ret;
+        }
         
         return 0;
     }

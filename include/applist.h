@@ -1,5 +1,4 @@
-#ifndef _VITA_HB_SORTER_APP_LIST_H_
-#define _VITA_HB_SORTER_APP_LIST_H_
+#pragma once
 
 #include <vector>
 #include <string>
@@ -53,5 +52,3 @@ namespace AppList {
     int Restore(void);
     bool Compare(const std::string &db_name);
 }
-
-#endif

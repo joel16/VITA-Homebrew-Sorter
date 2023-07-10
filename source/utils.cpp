@@ -72,12 +72,11 @@ namespace Utils {
             return ret;
         }
         
-        if (button == SCE_SYSTEM_PARAM_ENTER_BUTTON_CIRCLE)
+        if (button == SCE_SYSTEM_PARAM_ENTER_BUTTON_CIRCLE) {
             return SCE_CTRL_CIRCLE;
-        else
-            return SCE_CTRL_CROSS;
+        }
         
-        return 0;
+        return SCE_CTRL_CROSS;
     }
 
     int GetCancelButton(void) {
@@ -87,12 +86,11 @@ namespace Utils {
             return ret;
         }
         
-        if (button == SCE_SYSTEM_PARAM_ENTER_BUTTON_CIRCLE)
+        if (button == SCE_SYSTEM_PARAM_ENTER_BUTTON_CIRCLE) {
             return SCE_CTRL_CROSS;
-        else
-            return SCE_CTRL_CIRCLE;
+        }
         
-        return 0;
+        return SCE_CTRL_CIRCLE;
     }
 
     int GetDateFormat(void) {
