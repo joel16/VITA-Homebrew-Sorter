@@ -1,10 +1,10 @@
 #pragma once
 
-#include <vitaGL.h>
+#include <SDL.h>
 #include <vector>
 
 typedef struct {
-    GLuint id = 0;
+    SDL_Texture *ptr = nullptr;
     int width = 0;
     int height = 0;
 } Tex;

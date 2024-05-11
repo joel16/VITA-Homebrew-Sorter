@@ -1,9 +1,8 @@
-#include <memory>
-#include <png.h>
-#include <psp2/kernel/clib.h>
+#include <SDL_image.h>
 #include <string>
 
 #include "imgui.h"
+#include "gui.h"
 #include "log.h"
 #include "textures.h"
 
@@ -11,68 +10,44 @@ std::vector<Tex> icons;
 
 namespace Textures {
     constexpr int max_textures = 7;
+    int GL_RGB = 3, GL_RGBA = 4;
 
-    static bool Create(unsigned char *data, GLint format, Tex &texture) {
-        // Create a OpenGL texture identifier
-        glGenTextures(1, &texture.id);
-        glBindTexture(GL_TEXTURE_2D, texture.id);
-        
-        // Setup filtering parameters for display
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        
-        // Upload pixels into texture
-#if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-#endif
-        glTexImage2D(GL_TEXTURE_2D, 0, format, texture.width, texture.height, 0, format, GL_UNSIGNED_BYTE, data);
+    static bool LoadImage(const std::string &path, Tex &texture) {
+        texture.ptr = IMG_LoadTexture(GUI::GetRenderer(), path.c_str());
+
+        if (!texture.ptr) {
+            Log::Error("Couldn't load %s: %s\n", path.c_str(), SDL_GetError());
+            return false;
+        }
+
+        SDL_QueryTexture(texture.ptr, nullptr, nullptr, &texture.width, &texture.height);
         return true;
     }
 
-    static bool LoadImagePNG(const std::string &path, Tex &texture) {
-        bool ret = false;
-        png_image image;
-        sceClibMemset(&image, 0, (sizeof image));
-        image.version = PNG_IMAGE_VERSION;
-        
-        if (png_image_begin_read_from_file(&image, path.c_str()) != 0) {
-            image.format = PNG_FORMAT_RGBA;
-            std::unique_ptr<png_byte[]> buffer(new png_byte[PNG_IMAGE_SIZE(image)]);
-            
-            if (png_image_finish_read(&image, nullptr, buffer.get(), 0, nullptr) != 0) {
-                texture.width = image.width;
-                texture.height = image.height;
-                ret = Textures::Create(buffer.get(), GL_RGBA, texture);
-                png_image_free(&image);
-            }
-            else {
-                Log::Error("png_image_finish_read failed: %s\n", image.message);
-                png_image_free(&image);
-            }
+    void Free(SDL_Texture *texture) {
+        if (texture) {
+            SDL_DestroyTexture(texture);
+            texture = nullptr;
         }
-        else {
-            Log::Error("png_image_begin_read_from_memory failed: %s\n", image.message);
-        }
-        
-        return ret;
     }
 
     bool Init(void) {
-        icons.resize(max_textures);
-
         const std::string paths[max_textures] {
             "app0:res/app.png",
             "app0:res/db.png",
             "app0:res/folder.png",
             "app0:res/page.png",
+            "app0:res/trash.png",
             "app0:res/checked.png",
-            "app0:res/unchecked.png",
-            "app0:res/trash.png"
+            "app0:res/unchecked.png"
         };
 
         for (int i = 0; i < max_textures; i++) {
-            bool ret = Textures::LoadImagePNG(paths[i], icons[i]);
+            Tex texture;
+            bool ret = Textures::LoadImage(paths[i], texture);
             IM_ASSERT(ret);
+
+            icons.push_back(texture);
         }
 
         return 0;
@@ -80,7 +55,7 @@ namespace Textures {
 
     void Exit(void) {
         for (int i = 0; i < max_textures; i++) {
-            glDeleteTextures(1, &icons[i].id);
+            Textures::Free(icons[i].ptr);
         }
     }
 }

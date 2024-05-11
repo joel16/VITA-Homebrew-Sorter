@@ -2,66 +2,26 @@
 #include <cstdio>
 #include <psp2/power.h>
 #include <psp2/kernel/clib.h>
-#include <vitaGL.h>
+#include <SDL.h>
 
 #include "applist.h"
 #include "config.h"
 #include "fs.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "imgui_impl_vitagl.h"
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_sdlrenderer2.h"
 #include "imgui_internal.h"
+#include "log.h"
 #include "loadouts.h"
-#include "sqlite3.h"
-#include "textures.h"
+#include "tabs.h"
 #include "utils.h"
 
-namespace Renderer {
-    static void End(bool clear, ImVec4 clear_color) {
-        glViewport(0, 0, static_cast<int>(ImGui::GetIO().DisplaySize.x), static_cast<int>(ImGui::GetIO().DisplaySize.y));
-
-        if (clear) {
-            glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-            glClear(GL_COLOR_BUFFER_BIT);
-        }
-
-        ImGui::Render();
-        ImGui_ImplVitaGL_RenderDrawData(ImGui::GetDrawData());
-        vglSwapBuffers(GL_TRUE);
-    }
-}
-
 namespace GUI {
-    enum State {
-        StateNone,
-        StateConfirmSort,
-        StateConfirmSwap,
-        StateRestore,
-        StateLoadoutRestore,
-        StateWarning,
-        StateDone,
-        StateDelete,
-        StateError
-    };
-
-    enum SortMode {
-        SortDefault,
-        SortAsc,
-        SortDesc
-    };
-    
-    enum IconType {
-        App,
-        DB,
-        Folder,
-        Page,
-        Trash
-    };
-
     static bool backupExists = false;
     static const ImVec2 tex_size = ImVec2(20, 20);
-    static const char *sort_by[] = {"Title", "Title ID"};
-    static const char *sort_folders[] = {"Both", "Apps only", "Folders only"};
-    static int old_page_id = -1;
+    
+    static SDL_Window *window;
+    static SDL_Renderer *renderer;
 
     static void SetupPopup(const char *id) {
         ImGui::OpenPopup(id);
@@ -85,23 +45,10 @@ namespace GUI {
         ImGui::PopStyleVar();
     };
 
-    static void DisableButtonInit(bool disable) {
-        if (disable) {
-            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-        }
-    }
-
-    static void DisableButtonExit(bool disable) {
-        if (disable) {
-            ImGui::PopItemFlag();
-            ImGui::PopStyleVar();
-        }
-    }
-
     static void Prompt(State &state, AppEntries &entries, std::vector<SceIoDirent> &loadouts, const std::string &db_name) {
-        if (state == StateNone)
+        if (state == StateNone) {
             return;
+        }
         
         std::string title, prompt;
 
@@ -243,371 +190,153 @@ namespace GUI {
         GUI::ExitPopup();
     }
 
-    static void SortTab(AppEntries &entries, State &state) {
-        ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter |
-            ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY;
+    static void Begin(void) {
+        ImGui_ImplSDLRenderer2_NewFrame();
+        ImGui_ImplSDL2_NewFrame();
+        ImGui::NewFrame();
+    }
+    
+    static void End(ImGuiIO &io, ImVec4 clear_color, SDL_Renderer *renderer) {
+        ImGui::Render();
+        SDL_RenderSetScale(renderer, io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
+        SDL_SetRenderDrawColor(renderer, (Uint8)(clear_color.x * 255), (Uint8)(clear_color.y * 255), (Uint8)(clear_color.z * 255), (Uint8)(clear_color.w * 255));
+        SDL_RenderClear(renderer);
+        ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
+        SDL_RenderPresent(renderer);
+    }
+    
+    SDL_Renderer *GetRenderer(void) {
+        return renderer;
+    }
+
+    SDL_Window *GetWindow(void) {
+        return window;
+    }
+
+    int Init(void) {
+        if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
+            Log::Error("SDL_Init failed: %s\n", SDL_GetError());
+            return -1;
+        }
         
-        if (ImGui::BeginTabItem("Sort/Backup")) {
-            ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-
-            ImGui::PushID("sort_by");
-            ImGui::PushItemWidth(100.f);
-            if (ImGui::BeginCombo("", sort_by[cfg.sort_by])) {
-                for (int i = 0; i < IM_ARRAYSIZE(sort_by); i++) {
-                    const bool is_selected = (cfg.sort_by == i);
-                    
-                    if (ImGui::Selectable(sort_by[i], is_selected)) {
-                        cfg.sort_by = i;
-                        Config::Save(cfg);
-                    }
-
-                    if (is_selected) {
-                        ImGui::SetItemDefaultFocus();
-                    }
-                }
-
-                ImGui::EndCombo();
-            }
-            ImGui::PopItemWidth();
-            ImGui::PopID();
-
-            ImGui::SameLine();
-            
-            ImGui::PushID("sort_folders");
-            ImGui::PushItemWidth(150.f);
-            if (ImGui::BeginCombo("", sort_folders[cfg.sort_folders])) {
-                for (int i = 0; i < IM_ARRAYSIZE(sort_folders); i++) {
-                    const bool is_selected = (cfg.sort_folders == i);
-                    
-                    if (ImGui::Selectable(sort_folders[i], is_selected)) {
-                        cfg.sort_folders = i;
-                        Config::Save(cfg);
-                    }
-                        
-                    if (is_selected) {
-                        ImGui::SetItemDefaultFocus();
-                    }
-                }
-
-                ImGui::EndCombo();
-            }
-            ImGui::PopItemWidth();
-            ImGui::PopID();
-            
-            ImGui::SameLine();
-            
-            if (ImGui::RadioButton("Default", cfg.sort_mode == SortDefault)) {
-                cfg.sort_mode = SortDefault;
-                AppList::Get(entries);
-            }
-            
-            ImGui::SameLine();
-            
-            if (ImGui::RadioButton("Asc", cfg.sort_mode == SortAsc)) {
-                cfg.sort_mode = SortAsc;
-                AppList::Get(entries);
-                std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAppAsc);
-                std::sort(entries.child_apps.begin(), entries.child_apps.end(), AppList::SortChildAppAsc);
-                AppList::Sort(entries);
-            }
-            
-            ImGui::SameLine();
-            
-            if (ImGui::RadioButton("Desc", cfg.sort_mode == SortDesc)) {
-                cfg.sort_mode = SortDesc;
-                AppList::Get(entries);
-                std::sort(entries.icons.begin(), entries.icons.end(), AppList::SortAppDesc);
-                std::sort(entries.child_apps.begin(), entries.child_apps.end(), AppList::SortChildAppDesc);
-                AppList::Sort(entries);
-            }
-            
-            ImGui::SameLine();
-            
-            GUI::DisableButtonInit(cfg.sort_mode == SortDefault);
-            if (ImGui::Button("Apply Sort", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0.0f))) {
-                state = StateConfirmSort;
-            }
-            GUI::DisableButtonExit(cfg.sort_mode == SortDefault);
-
-            ImGui::SameLine();
-            
-            GUI::DisableButtonInit(!backupExists);
-            if (ImGui::Button("Restore Backup", ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f))) {
-                state = StateRestore;
-            }
-            GUI::DisableButtonExit(!backupExists);
-            
-            ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-            
-            if (ImGui::BeginTable("AppList", 5, tableFlags)) {
-                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
-                ImGui::TableSetupColumn("Title");
-                ImGui::TableSetupColumn("Page ID", ImGuiTableColumnFlags_WidthFixed);
-                ImGui::TableSetupColumn("Page No", ImGuiTableColumnFlags_WidthFixed);
-                ImGui::TableSetupColumn("Pos", ImGuiTableColumnFlags_WidthFixed);
-                ImGui::TableHeadersRow();
-                
-                for (unsigned int i = 0, counter = 0; i < entries.icons.size(); i++) {
-                    if (entries.icons[i].icon0Type == 7) {
-                        ImGui::TableNextRow();
-                        
-                        ImGui::TableNextColumn();
-                        ImGui::Image(reinterpret_cast<ImTextureID>(icons[Folder].id), tex_size);
-                        
-                        ImGui::TableNextColumn();
-                        std::string title = std::to_string(counter) + ") ";
-                        title.append(entries.icons[i].title);
-                        bool open = ImGui::TreeNodeEx(title.c_str(), ImGuiTreeNodeFlags_SpanFullWidth);
-                        
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%d", entries.icons[i].pageId);
-                        
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%d", entries.icons[i].pageNo);
-                        
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%d", entries.icons[i].pos);
-                        
-                        if (open) {
-                            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanFullWidth;
-                            int reserved01 = std::stoi(std::string(entries.icons[i].reserved01));
-                            
-                            for (unsigned int j = 0; j < entries.child_apps.size(); j++) {
-                                if (entries.child_apps[j].pageNo == reserved01) {
-                                    ImGui::TableNextRow();
-                                    ImGui::TableNextColumn();
-                                    
-                                    ImGui::TableNextColumn();
-                                    ImGui::TreeNodeEx(entries.child_apps[j].title, flags);
-                                    
-                                    ImGui::TableNextColumn();
-                                    ImGui::Text("%d", entries.child_apps[j].pageId);
-                                    
-                                    ImGui::TableNextColumn();
-                                    ImGui::Text("-");
-                                    
-                                    ImGui::TableNextColumn();
-                                    ImGui::Text("%d", entries.child_apps[j].pos);
-                                }
-                            }
-                            
-                            ImGui::TreePop();
-                        }
-
-                        counter++;
-                    }
-                    else if (entries.icons[i].pageNo >= 0) {
-                        ImGui::TableNextRow();
-                        
-                        ImGui::TableNextColumn();
-                        ImGui::Image(reinterpret_cast<ImTextureID>(icons[App].id), tex_size);
-                        
-                        ImGui::TableNextColumn();
-                        std::string title = std::to_string(counter) + ") ";
-                        title.append(entries.icons[i].title);
-                        ImGui::Selectable(title.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
-                        
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%d", entries.icons[i].pageId);
-                        
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%d", entries.icons[i].pageNo);
-                        
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%d", entries.icons[i].pos);
-                        
-                        counter++;
-                    }
-                }
-                
-                ImGui::EndTable();
-            }
-            
-            ImGui::EndTabItem();
+        // Create window with SDL_Renderer graphics context
+        SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+        window = SDL_CreateWindow("VITA Customizer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 960, 544, window_flags);
+        renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
+        if (renderer == nullptr) {
+            Log::Error("SDL_CreateRenderer failed: %s\n", SDL_GetError());
+            return 0;
         }
-    }
-
-    static void PagesTab(AppEntries &entries, State &state) {
-        ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter;
         
-        if (ImGui::BeginTabItem("Pages")) {
-            ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-            
-            if (ImGui::Button("Reset", ImVec2(ImGui::GetContentRegionAvail().x * 0.33f, 0.0f))) {
-                AppList::Get(entries);
-                old_page_id = -1;
-            }
+        // Setup Dear ImGui context
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+        io.IniFilename = nullptr;
 
-            ImGui::SameLine();
+        ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
+        ImGui_ImplSDLRenderer2_Init(renderer);
 
-            if (ImGui::Button("Apply Changes", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0.0f))) {
-                state = StateConfirmSwap;
-            }
+        // Build font atlas
+        unsigned char *pixels = nullptr;
+        int width = 0, height = 0, bytes_per_pixel = 0;
+        
+        ImFontConfig font_config;
+        font_config.OversampleH = 1;
+        font_config.OversampleV = 1;
+        font_config.PixelSnapH = 1;
+        
+        io.Fonts->AddFontFromFileTTF("sa0:/data/font/pvf/jpn0.pvf", 20.0f, std::addressof(font_config), io.Fonts->GetGlyphRangesJapanese());
+        io.Fonts->GetTexDataAsAlpha8(std::addressof(pixels), std::addressof(width), std::addressof(height), std::addressof(bytes_per_pixel));
+        io.Fonts->Build();
 
-            ImGui::SameLine();
+        // Set theme/style
+        ImGui::GetStyle().FrameRounding = 4.0f;
+		ImGui::GetStyle().GrabRounding = 4.0f;
+		
+		ImVec4 *colors = ImGui::GetStyle().Colors;
+		colors[ImGuiCol_Text] = ImVec4(0.85f, 0.85f, 0.85f, 1.00f);
+		colors[ImGuiCol_TextDisabled] = ImVec4(0.36f, 0.42f, 0.47f, 1.00f);
+		colors[ImGuiCol_WindowBg] = ImVec4(0.05f, 0.07f, 0.13f, 1.00f);
+		colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
+		colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
+		colors[ImGuiCol_Border] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
+		colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+		colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+		colors[ImGuiCol_FrameBgHovered] = ImVec4(0.12f, 0.20f, 0.28f, 1.00f);
+		colors[ImGuiCol_FrameBgActive] = ImVec4(0.09f, 0.12f, 0.14f, 1.00f);
+		colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.12f, 0.14f, 0.65f);
+		colors[ImGuiCol_TitleBgActive] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
+		colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
+		colors[ImGuiCol_MenuBarBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
+		colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.39f);
+		colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
+		colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.18f, 0.22f, 0.25f, 1.00f);
+		colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.09f, 0.21f, 0.31f, 1.00f);
+		colors[ImGuiCol_CheckMark] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
+		colors[ImGuiCol_SliderGrab] = ImVec4(0.28f, 0.56f, 1.00f, 1.00f);
+		colors[ImGuiCol_SliderGrabActive] = ImVec4(0.37f, 0.61f, 1.00f, 1.00f);
+		colors[ImGuiCol_Button] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+		colors[ImGuiCol_ButtonHovered] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
+		colors[ImGuiCol_ButtonActive] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
+		colors[ImGuiCol_Header] = ImVec4(0.20f, 0.25f, 0.29f, 0.55f);
+		colors[ImGuiCol_HeaderHovered] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
+		colors[ImGuiCol_HeaderActive] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
+		colors[ImGuiCol_Separator] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+		colors[ImGuiCol_SeparatorHovered] = ImVec4(0.10f, 0.40f, 0.75f, 0.78f);
+		colors[ImGuiCol_SeparatorActive] = ImVec4(0.10f, 0.40f, 0.75f, 1.00f);
+		colors[ImGuiCol_ResizeGrip] = ImVec4(0.26f, 0.59f, 0.98f, 0.25f);
+		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
+		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
+		colors[ImGuiCol_Tab] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
+		colors[ImGuiCol_TabHovered] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
+		colors[ImGuiCol_TabActive] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
+		colors[ImGuiCol_TabUnfocused] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
+		colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
+		colors[ImGuiCol_PlotLines] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
+		colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+		colors[ImGuiCol_PlotHistogram] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
+		colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+		colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
+		colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
+		colors[ImGuiCol_NavHighlight] = ImVec4(0.65f, 0.16f, 0.31f, 1.0f);
+		colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
+		colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
+		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 
-            GUI::DisableButtonInit(!backupExists);
-            if (ImGui::Button("Restore Backup", ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f))) {
-                state = StateRestore;
-            }
-            GUI::DisableButtonExit(!backupExists);
-            
-            ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-            
-            if (ImGui::BeginTable("PagesList", 3, tableFlags)) {
-                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
-                ImGui::TableSetupColumn("pageId");
-                ImGui::TableSetupColumn("pageNo");
-                ImGui::TableHeadersRow();
-                
-                for (unsigned int i = 0; i < entries.pages.size(); i++) {
-                    ImGui::TableNextRow();
-                    
-                    ImGui::TableNextColumn();
-                    ImGui::Image(reinterpret_cast<ImTextureID>(icons[Page].id), tex_size);
-                    
-                    ImGui::TableNextColumn();
-                    ImGui::Text("%d", entries.pages[i].pageId);
+        return 0;
+    }
 
-                    ImGui::TableNextColumn();
-                    std::string pageNo = std::to_string(entries.pages[i].pageNo);
-                    const bool is_selected = (old_page_id == static_cast<int>(i));
-                    if (ImGui::Selectable(pageNo.c_str(), is_selected)) {
-                        if (old_page_id == -1) {
-                            old_page_id = i;
-                        }
-                        else {
-                            int temp = entries.pages[i].pageNo;
-                            entries.pages[i].pageNo = entries.pages[old_page_id].pageNo;
-                            entries.pages[old_page_id].pageNo = temp;
-                            old_page_id = -1;
-                            ImGui::ClearActiveID();
-                        }
-                    }
-                }
+    void Exit(void) {
+        ImGui_ImplSDLRenderer2_Shutdown();
+        ImGui_ImplSDL2_Shutdown();
+        ImGui::DestroyContext();
+        
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+    }
 
-                ImGui::EndTable();
-            }
-
-            ImGui::EndTabItem();
+    void DisableButtonInit(bool disable) {
+        if (disable) {
+            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
         }
     }
 
-    static void LoadoutsTab(std::vector<SceIoDirent> &loadouts, State &state, int &date_format, std::string &loadout_name) {
-        ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter |
-            ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY;
-
-        if (ImGui::BeginTabItem("Loadouts")) {
-            ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-            
-            if (ImGui::Button("Backup current loadout", ImVec2(ImGui::GetContentRegionAvail().x * 1.0f, 0.0f))) {
-                if (R_SUCCEEDED(Loadouts::Backup())) {
-                    FS::GetDirList("ux0:data/VITAHomebrewSorter/loadouts", loadouts);
-                }
-            }
-            
-            ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-            
-            if (ImGui::BeginTable("LoadoutList", 4, tableFlags)) {
-                if (loadouts.empty()) {
-                    ImGui::Text("No loadouts found");
-                }
-                else {
-                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
-                    ImGui::TableSetupColumn("Title");
-                    ImGui::TableSetupColumn("Date", ImGuiTableColumnFlags_WidthFixed);
-                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
-                    ImGui::TableHeadersRow();
-                    
-                    for (unsigned int i = 0; i < loadouts.size(); i++) {
-                        ImGui::TableNextRow();
-                        
-                        ImGui::TableNextColumn();
-                        ImGui::Image(reinterpret_cast<ImTextureID>(icons[DB].id), tex_size);
-                        
-                        ImGui::TableNextColumn();
-                        if (ImGui::Selectable(loadouts[i].d_name, false)) {
-                            loadout_name = loadouts[i].d_name;
-                            state = StateLoadoutRestore;
-                        }
-                        
-                        ImGui::TableNextColumn();
-                        char date[16];
-                        Utils::GetDateString(date, static_cast<SceSystemParamDateFormat>(date_format), loadouts[i].d_stat.st_mtime);
-                        ImGui::Text(date);
-
-                        ImGui::TableNextColumn();
-                        ImGui::PushID(i);
-                        if (ImGui::ImageButton("", reinterpret_cast<ImTextureID>(icons[Trash].id), tex_size, ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f))) {
-                            loadout_name = loadouts[i].d_name;
-                            state = StateDelete;
-                        }
-                        ImGui::PopID();
-                    }
-                }
-                
-                ImGui::EndTable();
-            }
-            
-            ImGui::EndTabItem();
-        }
-    }
-
-    static void SettingsTab(void) {
-        if (ImGui::BeginTabItem("Settings")) {
-            ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-
-            ImGui::Indent(5.f);
-            ImGui::TextColored(ImVec4(0.70f, 0.16f, 0.31f, 1.0f), "Beta features:");
-            ImGui::Indent(15.f);
-
-            if (ImGui::RadioButton("Enabled", cfg.beta_features == true)) {
-                cfg.beta_features = true;
-                Config::Save(cfg);
-            }
-            
-            ImGui::SameLine();
-            
-            if (ImGui::RadioButton("Disabled", cfg.beta_features == false)) {
-                cfg.beta_features = false;
-                Config::Save(cfg);
-            }
-
-            ImGui::Dummy(ImVec2(0.0f, 10.0f)); // Spacing
-            ImGui::Unindent();
-            
-            ImGui::Indent(5.f);
-            ImGui::TextColored(ImVec4(0.70f, 0.16f, 0.31f, 1.0f), "App Info:");
-            ImGui::Indent(15.f);
-            std::string version = APP_VERSION;
-            version.erase(0, std::min(version.find_first_not_of('0'), version.size() - 1));
-            ImGui::Text("App version: %s", version.c_str());
-            ImGui::Text("Author: Joel16");
-            ImGui::Text("Assets: PreetiSketch");
-            ImGui::Text("Dear imGui version: %s", ImGui::GetVersion());
-            ImGui::Text("SQLite 3 version: %s", sqlite3_libversion());
-            
-            ImGui::Dummy(ImVec2(0.0f, 10.0f)); // Spacing
-            ImGui::Unindent();
-            
-            ImGui::Indent(5.f);
-            ImGui::TextColored(ImVec4(0.70f, 0.16f, 0.31f, 1.0f), "Usage:");
-            ImGui::Indent(15.f);
-            std::string usage = std::string("VITA Homebrew Sorter is a basic PS VITA homebrew application that sorts the application database in your LiveArea.")
-                + " The application sorts apps and games that are inside folders as well. This applications also allows you to backup your current 'loadout' that "
-                + " you can switch into as you wish. A backup will be made before any changes are applied to the application database."
-                + " This backup is overwritten each time you use the sort option. You can find the backup in ux0:/data/VITAHomebrewSorter/backups/app.db."
-                + " \n\nIt is always recommended to restart your vita so that it can refresh your livearea/app.db for any changes (deleted icons, new folders, etc.)"
-                + " before you run this application.";
-            ImGui::TextWrapped(usage.c_str());
-            ImGui::Unindent();
-            
-            ImGui::EndTabItem();
+    void DisableButtonExit(bool disable) {
+        if (disable) {
+            ImGui::PopItemFlag();
+            ImGui::PopStyleVar();
         }
     }
 
     int RenderLoop(void) {
         bool done = false;
+        ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
         backupExists = (FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db") || FS::FileExists("ux0:/data/VITAHomebrewSorter/backup/app.db.bkp"));
         
         AppEntries entries;
@@ -624,34 +353,51 @@ namespace GUI {
         
         std::string loadout_name;
         State state = StateNone;
-        SceCtrlData pad = { 0 };
+
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
         
         while (!done) {
-            ImGui_ImplVitaGL_NewFrame();
-            ImGui::NewFrame();
+            SDL_Event event;
+            while (SDL_PollEvent(&event)) {
+                ImGui_ImplSDL2_ProcessEvent(&event);
+
+                switch (event.type) {
+                    case SDL_QUIT:
+                        done = true;
+                        break;
+
+                    case SDL_WINDOWEVENT:
+                        if (event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window)) {
+                            done = true;
+                        }
+                        break;
+
+                    case SDL_CONTROLLERBUTTONDOWN:
+                        if (event.cbutton.button == SDL_CONTROLLER_BUTTON_START) {
+                            done = true;
+                        }
+                        break;
+                }
+            }
+
+            GUI::Begin();
             GUI::SetupWindow();
 
             if (ImGui::Begin("VITA Homebrew Sorter", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
                 if (ImGui::BeginTabBar("VITA Homebrew Sorter tabs")) {
-                    GUI::SortTab(entries, state);
-                    GUI::PagesTab(entries, state);
+                    Tabs::Sort(entries, state, backupExists);
+                    Tabs::Pages(entries, state, backupExists);
                     GUI::DisableButtonInit(!cfg.beta_features);
-                    GUI::LoadoutsTab(loadouts, state, date_format, loadout_name);
+                    Tabs::Loadouts(loadouts, state, date_format, loadout_name);
                     GUI::DisableButtonExit(!cfg.beta_features);
-                    GUI::SettingsTab();
+                    Tabs::Settings();
                     ImGui::EndTabBar();
                 }
             }
 
             GUI::ExitWindow();
             GUI::Prompt(state, entries, loadouts, loadout_name.c_str());
-            Renderer::End(true, ImVec4(0.45f, 0.55f, 0.60f, 1.00f));
-
-            pad = Utils::ReadControls();
-
-            if (pressed & SCE_CTRL_START) {
-                done = true;
-            }
+            GUI::End(io, clear_color, renderer);
         }
 
         return 0;

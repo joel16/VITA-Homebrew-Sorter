@@ -3,8 +3,8 @@
 #include <locale>
 #include <psp2/kernel/clib.h>
 #include <psp2/ime_dialog.h>
-#include <vitaGL.h>
 
+#include "gui.h"
 #include "keyboard.h"
 #include "log.h"
 #include "utils.h"
@@ -87,8 +87,7 @@ namespace Keyboard {
         bool done = false;
 
         do {
-            glClear(GL_COLOR_BUFFER_BIT);
-            glClearColor(0, 0, 0, 1);
+            SDL_RenderClear(GUI::GetRenderer());
 
             SceCommonDialogStatus status = Keyboard::Update();
 
@@ -98,8 +97,8 @@ namespace Keyboard {
             else if (status != SCE_COMMON_DIALOG_STATUS_CANCELLED) {
                 done = false;
             }
-
-            vglSwapBuffers(GL_TRUE);
+            
+            SDL_RenderPresent(GUI::GetRenderer());
         } while(!done);
 
         return text;

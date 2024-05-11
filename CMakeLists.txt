@@ -28,10 +28,17 @@ add_definitions(
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -mtune=cortex-a9 -mfpu=neon -Wall -Wno-psabi -fno-rtti -std=gnu++17")
 set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d PARENTAL_LEVEL=1")
 
+find_package(SDL2 REQUIRED)
+find_package(SDL2_image REQUIRED)
+
 include_directories(
     ${VITASDK}/arm-vita-eabi/include/freetype2/
+    ${SDL2_INCLUDE_DIR}
+    ${SDL2_IMAGE_INCLUDE_DIRS}
     libs/imgui
+    libs/imgui/backends
     libs/sqlite3
+    libs
     include
 )
 
@@ -45,13 +52,18 @@ add_executable(${PROJECT_NAME}
     libs/imgui/imgui_draw.cpp
     libs/imgui/imgui_tables.cpp
     libs/imgui/imgui_widgets.cpp
+    libs/imgui/backends/imgui_impl_sdl2.cpp
+    libs/imgui/backends/imgui_impl_sdlrenderer2.cpp
     libs/imgui/misc/freetype/imgui_freetype.cpp
     libs/sqlite3/sqlite3.c
+    source/tabs/loadouts.cpp
+    source/tabs/pages.cpp
+    source/tabs/settings.cpp
+    source/tabs/sort.cpp
     source/applist.cpp
     source/config.cpp
     source/fs.cpp
     source/gui.cpp
-    source/imgui_impl_vitagl.cpp
     source/keyboard.cpp
     source/loadouts.cpp
     source/log.cpp
@@ -66,27 +78,11 @@ target_link_libraries(${PROJECT_NAME}
     freetype
     png
     pthread
-    lzma
     bz2
     z
-    vitaGL
-    vitashark
-    mathneon
-    SceAppMgr_stub
-    SceAppUtil_stub
-    SceCommonDialog_stub
-    SceCtrl_stub
-    SceDisplay_stub
-    SceGxm_stub
-    SceKernelDmacMgr_stub
+    SDL2_image
+    SDL2::SDL2
     SceLibJson_stub
-    SceLibKernel_stub
-    ScePower_stub
-    SceShaccCg_stub
-    SceShaccCgExt
-    SceSysmodule_stub
-    SceTouch_stub
-    taihen_stub
 )
 
 ## Create Vita files
