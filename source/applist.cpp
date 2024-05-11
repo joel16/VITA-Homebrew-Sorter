@@ -345,27 +345,32 @@ namespace AppList {
 
         return false;
     }
-
+    
     void Sort(AppEntries &entries) {
+        const int MAX_POS = 9;
         int pos = 0, pageCounter = 0;
-
-        for (unsigned int i = 0; i < entries.icons.size(); i ++) {
+        
+        std::unordered_map<int, int> folderIndexMap;
+        for (AppInfoFolder folder : entries.folders) {
+            folderIndexMap[folder.pageId] = folder.index;
+        }
+        
+        for (unsigned int i = 0; i < entries.icons.size(); i++) {
             // Reset position
-            if (pos > 9) {
+            if (pos > MAX_POS) {
                 pos = 0;
                 pageCounter++;
             }
             
             // App/Game belongs to a folder
-            if ((entries.icons[i].pageNo < 0) && (cfg.sort_folders == SortBoth || cfg.sort_folders == SortFoldersOnly)) {
-                for (unsigned int j = 0; j < entries.folders.size(); j++) {
-                    if (entries.icons[i].pageId == entries.folders[j].pageId) {
-                        entries.icons[i].pos = entries.folders[j].index;
-                        entries.folders[j].index++;
-                    }
+            if ((entries.icons[i].pageNo < 0) && (cfg.sort_folders != SortAppsOnly)) {
+                int it = folderIndexMap.find(entries.icons[i].pageId);
+                if (it != folderIndexMap.end()) {
+                    entries.icons[i].pos = it->second;
+                    folderIndexMap[entries.icons[i].pageId]++;
                 }
             }
-            else if ((entries.icons[i].pageNo >= 0) && (cfg.sort_folders == SortBoth || cfg.sort_folders == SortAppsOnly)) {
+            else if ((entries.icons[i].pageNo >= 0) && (cfg.sort_folders != SortFoldersOnly)) {
                 entries.icons[i].pos = pos;
                 entries.icons[i].pageId = entries.pages[pageCounter].pageId;
                 pos++;
