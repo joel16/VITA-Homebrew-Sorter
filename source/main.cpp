@@ -11,37 +11,37 @@
 int _newlib_heap_size_user = 192 * 1024 * 1024;
 
 namespace Services {
-	void Init(void) {
-		GUI::Init();
-		Utils::InitAppUtil();
-		sceSysmoduleLoadModule(SCE_SYSMODULE_JSON);
+    void Init(void) {
+        GUI::Init();
+        Utils::InitAppUtil();
+        sceSysmoduleLoadModule(SCE_SYSMODULE_JSON);
+        
+        if (!FS::DirExists("ux0:data/VITAHomebrewSorter/backup")) {
+            FS::MakeDir("ux0:data/VITAHomebrewSorter/backup");
+        }
+        
+        if (!FS::DirExists("ux0:data/VITAHomebrewSorter/loadouts")) {
+            FS::MakeDir("ux0:data/VITAHomebrewSorter/loadouts");
+        }
+        
+        Log::Init();
+        Textures::Init();
+        Power::InitThread();
+        Config::Load();
+    }
 
-		if (!FS::DirExists("ux0:data/VITAHomebrewSorter/backup")) {
-			FS::MakeDir("ux0:data/VITAHomebrewSorter/backup");
-		}
-
-		if (!FS::DirExists("ux0:data/VITAHomebrewSorter/loadouts")) {
-			FS::MakeDir("ux0:data/VITAHomebrewSorter/loadouts");
-		}
-		
-		Log::Init();
-		Textures::Init();
-		Power::InitThread();
-		Config::Load();
-	}
-
-	void Exit(void) {
-		Textures::Exit();
-		Log::Exit();
-		sceSysmoduleUnloadModule(SCE_SYSMODULE_JSON);
-		Utils::EndAppUtil();
-		GUI::Exit();
-	}
+    void Exit(void) {
+        Textures::Exit();
+        Log::Exit();
+        sceSysmoduleUnloadModule(SCE_SYSMODULE_JSON);
+        Utils::EndAppUtil();
+        GUI::Exit();
+    }
 }
 
 int main(int argc, char *argv[]) {
-	Services::Init();
-	GUI::RenderLoop();
-	Services::Exit();
-	return 0;
+    Services::Init();
+    GUI::RenderLoop();
+    Services::Exit();
+    return 0;
 }
