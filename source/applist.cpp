@@ -290,7 +290,7 @@ namespace AppList {
         return 0;
     }
 
-    static bool Compare(const std::string &nameA, const std::string &nameB, SortOrder sortOrder) {
+    static bool Compare(const std::string &nameA, const std::string &nameB, int sortOrder) {
         if (sortOrder == SortTitle) {
             return std::lexicographical_compare(nameA.begin(), nameA.end(), nameB.begin(), nameB.end(), [](char a, char b) {
                 return std::tolower(a) < std::tolower(b);
