@@ -290,60 +290,39 @@ namespace AppList {
         return 0;
     }
 
-    bool SortAppAsc(const AppInfoIcon &entryA, const AppInfoIcon &entryB) {
-        std::string entryAname = cfg.sort_by == SortTitle? entryA.title : entryA.titleId;
-        std::string entryBname = cfg.sort_by == SortTitle? entryB.title : entryB.titleId;
-
-        std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
-        std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
-
-        if (entryAname.compare(entryBname) < 0) {
-            return true;
+    static bool Compare(const std::string &nameA, const std::string &nameB, SortOrder sortOrder) {
+        if (sortOrder == SortTitle) {
+            return std::lexicographical_compare(nameA.begin(), nameA.end(), nameB.begin(), nameB.end(), [](char a, char b) {
+                return std::tolower(a) < std::tolower(b);
+            });
         }
+        else {
+            return nameA < nameB;
+        }
+    }
 
-        return false;
+    bool SortAppAsc(const AppInfoIcon &entryA, const AppInfoIcon &entryB) {
+        const std::string &entryAName = (cfg.sort_by == SortTitle) ? entryA.title : entryA.titleId;
+        const std::string &entryBName = (cfg.sort_by == SortTitle) ? entryB.title : entryB.titleId;
+        return AppList::Compare(entryAName, entryBName, cfg.sort_by);
     }
 
     bool SortAppDesc(const AppInfoIcon &entryA, const AppInfoIcon &entryB) {
-        std::string entryAname = cfg.sort_by == SortTitle? entryA.title : entryA.titleId;
-        std::string entryBname = cfg.sort_by == SortTitle? entryB.title : entryB.titleId;
-
-        std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
-        std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
-
-        if (entryBname.compare(entryAname) < 0) {
-            return true;
-        }
-
-        return false;
+        const std::string &entryAName = (cfg.sort_by == SortTitle) ? entryA.title : entryA.titleId;
+        const std::string &entryBName = (cfg.sort_by == SortTitle) ? entryB.title : entryB.titleId;
+        return AppList::Compare(entryBName, entryAName, cfg.sort_by);
     }
 
     bool SortChildAppAsc(const AppInfoChild &entryA, const AppInfoChild &entryB) {
-        std::string entryAname = cfg.sort_by == SortTitle? entryA.title : entryA.titleId;
-        std::string entryBname = cfg.sort_by == SortTitle? entryB.title : entryB.titleId;
-
-        std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
-        std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
-
-        if (entryAname.compare(entryBname) < 0) {
-            return true;
-        }
-
-        return false;
+        const std::string &entryAName = (cfg.sort_by == SortTitle) ? entryA.title : entryA.titleId;
+        const std::string &entryBName = (cfg.sort_by == SortTitle) ? entryB.title : entryB.titleId;
+        return AppList::Compare(entryAName, entryBName, cfg.sort_by);
     }
 
     bool SortChildAppDesc(const AppInfoChild &entryA, const AppInfoChild &entryB) {
-        std::string entryAname = cfg.sort_by == SortTitle? entryA.title : entryA.titleId;
-        std::string entryBname = cfg.sort_by == SortTitle? entryB.title : entryB.titleId;
-
-        std::transform(entryAname.begin(), entryAname.end(), entryAname.begin(), [](unsigned char c){ return std::tolower(c); });
-        std::transform(entryBname.begin(), entryBname.end(), entryBname.begin(), [](unsigned char c){ return std::tolower(c); });
-
-        if (entryBname.compare(entryAname) < 0) {
-            return true;
-        }
-
-        return false;
+        const std::string &entryAName = (cfg.sort_by == SortTitle) ? entryA.title : entryA.titleId;
+        const std::string &entryBName = (cfg.sort_by == SortTitle) ? entryB.title : entryB.titleId;
+        return AppList::Compare(entryBName, entryAName, cfg.sort_by);
     }
     
     void Sort(AppEntries &entries) {
@@ -364,7 +343,8 @@ namespace AppList {
             
             // App/Game belongs to a folder
             if ((entries.icons[i].pageNo < 0) && (cfg.sort_folders != SortAppsOnly)) {
-                int it = folderIndexMap.find(entries.icons[i].pageId);
+                std::unordered_map<int, int>::const_iterator it = folderIndexMap.find(entries.icons[i].pageId);
+
                 if (it != folderIndexMap.end()) {
                     entries.icons[i].pos = it->second;
                     folderIndexMap[entries.icons[i].pageId]++;
