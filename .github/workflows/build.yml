@@ -17,7 +17,7 @@ jobs:
         sudo apt-get -y install make git cmake python3
           
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
 
@@ -37,7 +37,7 @@ jobs:
         mkdir build && cd build && cmake ..
         make
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: VITA-Homebrew-Sorter.vpk
         path: build/VITA-Homebrew-Sorter.vpk
